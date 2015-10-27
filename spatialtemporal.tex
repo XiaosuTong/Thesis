@@ -1,0 +1,118 @@
+\chapter{DIVIDE AND RECOMBINED FOR SPATIAL-TEMPROAL DATA}
+
+\section{Divide and Recombine (D\&R)}
+
+D\&R \cite{Guha:2012} is a statistical framework for the analysis of large complex
+data that enables feasible and practical analysis of large complex data. The 
+analyst selects a division method to divide the data into subsets, applies an 
+analytic method of the analysis to each subset independently with no communication
+among subsets, selects a recombination method that is applied to the outputs 
+across subsets to form a result of the analytic method for the entire data.
+
+\section{Description of Data}
+
+The demand and interest of high-value environmental data and information has 
+dramatically increased in recent years.
+National Centers for Environmental Information, formerly the National
+Climatic Data Center (NCDC), is responsible for hosing and providing access to
+one of the most significant archives of environmental information. Some of data 
+set are shown as follows:
+
+\begin{itemize}
+  \item COOP:
+    Through the National Weather Service (NWS) Cooperative Observer Program 
+    (COOP), more than 10,000 volunteers take daily weather observations at 
+    National Parks, seashores, mountaintops, and farms as well as in urban and 
+    suburban areas. COOP data usually consist of daily maximum and minimum 
+    temperatures \cite{COOP}.
+  \item SNOTEL:
+    The Natural Resources Conservation Service (NRCS) operates and maintains an 
+    extensive and automated system (SNOwpack TELemetry or SNOTEL) designed to
+    collect snowpack and related climatic data like air temperature in the Western
+    United States begins in 1978 \cite{SNOTEL}.
+  \item AG:
+    Agricultural climate data for southeastern Washington from United States
+    Department of Agriculture Natural Resources Conservation Service (USDA-NRCS) 
+    \cite{USDA}.
+  \item MRCC:
+    Midwest Climate Data Center data, mainly for period between 1895 and 1948. 
+    The MRCC \cite{MRCC} serves the nine-state Midwest region (Illinois, Indiana, 
+    Iowa, Kentucky, Michigan, Minnesota, Missouri, Ohio, and Wisconsin).
+  \item USHCN:
+    Historical Climate Network data provides summary of the month temperature and 
+    precipitation observations for 1,218 stations across the contiguous United 
+    States. Temperature observations have been homogeneity corrected to remove 
+    biases associated with non-climatic influences, such as changes in 
+    instrumentation and observing practices, and changes to the environment 
+    including station relocations \cite{USHCN}.
+\end{itemize}
+
+Based on data set listed above, the NCEI \cite{NCEI} have further processed to 
+produce a by combining stations at similar locations and eliminating stations 
+with short records.
+
+In 2002,
+The data is about observed monthly average maximum daily temperatures for the 
+conterminous US from 1895 to 1997.
+There are 8125 stations reporting monthly average maximum daily temperatures at 
+some time in this period. However, the maximum number of stations 
+with data on any given month is substantially less reaching a maximum of around 
+6000. 
+
+\section{Initial Analysis: Data and Statistics}
+
+In this section, we describe the procedures of our data collection and initial 
+processing, followed by summary statistics of the obtained monthly maximum 
+temperature. Further processing of the data into multiple databases of various 
+structures are discussed in details in the following sections along with the 
+corresponding analyses enabled and facilitated by each database.
+
+\subsection{Data Collection and Initial Processing}
+
+\subsection{Summary Statistics}
+some initial plots and summary
+
+I will look at the data trends and show how they are cyclical in nature and show little long time trends.
+
+\begin{myframe}[width=\textwidth, bottom=28pt, top=20pt]
+I certify that the work presented in the dissertation is my own unless referenced.
+
+WHatever it is!
+
+link to the plot
+\end{myframe}
+
+\section{Division by Station}
+
+
+\section{Division by Month}
+
+\subsection{Conditionally Parametric Model}
+
+A nonparametric surface is conditionally
+parametric if we can divide the factors up into two disjoint subsets
+A and ? with the following property: given the values of the factors in A,
+the surface is a member of a parametric class as a function of the the factors
+in B. We say that the surface is conditionally parametric in A.
+It makes sense to specify a regression surface to be conditionally parametric
+in one or more variables if exploration of the data or a priori information
+suggests that the underlying pattern of the data is globally a very smooth
+function of the variables. Making such a specification when it is valid can
+result in a more parsimonious fit.
+An exceedingly simple modification of loess fitting yields a conditionally
+parametric surface. We simply ignore the conditionally parametric factors
+in computing the Euclidean distances that are used in the definition of the
+neighborhood weights, Wi(x).
+
+The method for making a loess fit conditionally parametric in a proper subset of predictors is simple.
+The subset is ignored in computing the Euclidean distances that are used in the definition of the
+neighborhood weights, $\omega_i(x)$. Let us use an example to explain why this produces a conditionally 
+parametric surface. Suppose that there are two predictors, $\mu$ and $\nu$, and $\lambda=2$. Suppose
+we specify $\mu$ to be a conditionally parametric predictor. Since the weight function ignores the 
+variable $\mu$ the $i$th weight, $\omega_i(\mu, \nu)$ for the fit at $(\mu, \nu)$, is the same as the
+$i$th weight, $\omega_i(\mu+t, \nu)$, for the fit at $(\mu+t, \nu)$. Thus the quadratic polynomial 
+that is fitted locally for the fit at $(\mu, \nu)$ is the same as the quadratic polynomial that is 
+fitted locally for the fit at $(\mu+t, \nu)$, whatever the value of $t$. So for the fixed value
+of $\nu$, the surface is exactly this quadratic as a function of the first predictor.
+
+\section{Modeling: }

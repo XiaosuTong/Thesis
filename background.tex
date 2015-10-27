@@ -1,0 +1,34 @@
+\chapter{BACKGROUND}
+
+This chapter introduces local regression and some time series modeling methods,
+with emphasis on a time series decomposition method: seasonal trend decomposition
+using loess (STL), and a spatially local regression method. The goal is to be
+brief but still cover the methods thoroughly, as much of the new work developed
+later depends heavily on these topics.
+
+\section{Local Regression Models}
+
+Often nature presents dependencies that are much more complex than can be captured
+with a simple parametric model. When the data suggest that $\mu(x)$ is a complex
+function, one may try to accommodate this by specifying a complex parametric model
+with many parameters.
+
+Another approach to modeling a complex $\mu$ that is much more simple and flexible
+is local regression \cite{Cleveland:1979}. Instead of constraining $\mu(x)$ to 
+have a parametric form, assume that the data locally, around some neighborhood of
+x, can be well-approximated by a parametric form, namely low order polynomials.
+
+The same idea can be illustrated when replacement of a quantitative variable by
+indicator variables 
+
+\section{Fitting a Local Regression Model}
+
+
+\section{Computation}
+
+\section{Seasonal Trend Decomposition using Loess (STL)}
+
+Seasonal trend decomposition using loess (STL) is a method for decomposing a time
+series into seasonal, trend, and remainder components \cite{Cleveland:1990}.
+
+
