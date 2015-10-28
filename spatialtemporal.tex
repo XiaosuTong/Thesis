@@ -1,6 +1,8 @@
-\chapter{DIVIDE AND RECOMBINED ANALYSIS TO SPATIAL-TEMPROAL DATA}
+\chapter[DIVIDE AND RECOMBINED ANALYSIS TO SPATIAL-TEMPROAL \\ DATA]{DIVIDE AND RECOMBINED ANALYSIS TO SPATIAL-TEMPROAL DATA}
 
-\section{Divide and Recombine (D\&R)}
+\section{Divide and Recombine (D\&R) for Large Complex Data}
+
+\subsection{D\&R Statistical Framework}
 
 D\&R \cite{Guha:2012} is a statistical framework for the analysis of large complex
 data that enables feasible and practical analysis of large complex data. The 
@@ -13,19 +15,39 @@ Analytic methods have two distinct categories, visualization methods whose outpu
 are visual displays, and number-category methods whose outputs are numeric and 
 categorical values. In D\&R, number-category analytic methods are typically applied
 to each of the subsets. Visualization methods are typically applied to each subset 
-in a sample of subsets because often there are too many of them to look at plots of 
-all \cite{Ryan:2013}.
+in a sample of subsets because often there are too many of them to look at plots 
+of all \cite{Hafen:2013}.
  
-\section{Description of Data}
+\subsection{Computational Environment}
 
-In 350 BC, Aristotle as the founder of meteorology, wrote about Meteorology. After
-that, human beings never stopped the study of the weather. Because of digitization,
-people are able to store, summarize and analyse larger and more complex climate data 
-set. The demand and interest of high-value environmental data and information has 
-dramatically increased. National Centers for Environmental Information, formerly 
-the National Climatic Data Center (NCDC), is responsible for hosing and providing 
-access to one of the most significant archives of environmental information. Some 
-of data set are shown as follows:
+The front end of our computational environment is R \cite{R}, the widely used and 
+highly acclaimed interactive language for data analysis. On the other side, the
+back end is the Hadoop. The core of Hadoop consists of Hadoop Distributed File 
+System (HDFS) \cite{HDFS} for storage and processing engine (MapReduce) 
+\cite{mapreduce}. RHIPE \cite{Guha:2010}, the R and Hadoop Integrated Programming 
+Environment, bridge the gap between two ends. 
+
+As analyst, we only need to specify R code to carry out a D\&R job
+\begin{itemize}
+\item divide the whole dataset into subsets
+\item apply the analytic method to each subset
+\item recombine the outputs of the A computations and write results to the HDFS. 
+\end{itemize}  
+
+Hadoop computes the subsets by executing the analyst D[dr] R commands, and 
+distributes the subsets across the servers of the cluster into the Hadoop 
+Distributed File System (HDFS). Hadoop runs the 
+
+\section{Source of Data}
+
+Because of digitization and rapid development of computer hardware, nowadays
+people are able to store, summarize and analyze larger and more 
+complex climate data set than before, which stimulates the dramatically 
+increasing  of the demand and interest of high-value environmental data and 
+information. In United States, National Centers for Environmental Information, 
+formerly the National Climatic Data Center (NCDC), is responsible for hosing and 
+providing access to one of the most significant archives of environmental 
+information. Some of data set hosted by NCEI \cite{NCEI} are shown as follows:
 
 \begin{itemize}
   \item COOP:
@@ -56,18 +78,18 @@ of data set are shown as follows:
     including station relocations \cite{USHCN}.
 \end{itemize}
 
-In 2002, based on data set listed above, the NCEI \cite{NCEI} have further processed 
-them to produce a consolidated and uniform 103-year spatial temporal data set by 
-combining stations at similar locations and eliminating stations with short records.
-The data is about observed monthly average maximum daily temperatures for the 
-conterminous US from 1895 to 1997. There are 8,125 stations reporting monthly average 
-maximum daily temperatures at some time in this period. However, the maximum number 
-of stations with data on any given month is substantially less reaching a maximum of 
-around 6,000. 
+In 2002, based on the data set we listed above, the NCEI has further
+processed them to produce a consolidated and uniform 103-year spatial temporal
+data set by combining stations at similar locations, eliminating stations with
+short records, and aggregating some of daily measurement to be monthly.
+In summary, the data we are going to analyze is about observed monthly average
+maximum daily temperatures for the conterminous US from 1895 to 1997. There are
+8,125 stations reporting monthly average maximum daily temperatures at some time
+in this period which includes 1,236 months. 
 
 \section{Initial Analysis: Data and Statistics}
 
-In this section, we describe the procedures of our data collection and initial 
+In this section, we describe the procedures of our data downloading and initial 
 processing, followed by summary statistics of the obtained monthly maximum 
 temperature. Further processing of the data into multiple databases of various 
 structures are discussed in details in the following sections along with the 
