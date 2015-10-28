@@ -27,14 +27,18 @@ System (HDFS) \cite{HDFS} for storage and processing engine (MapReduce)
 \cite{mapreduce}. RHIPE \cite{Guha:2010}, the R and Hadoop Integrated Programming 
 Environment, bridge the gap between two ends. 
 
-As analyst, we only need to specify R code to carry out a D\&R job
+As analyst, we only need to specify R code to carry out a D\&R job which consists 
+of following three steps:
 \begin{itemize}
-\item divide the whole dataset into subsets
-\item apply the analytic method to each subset
+\item Divide the whole dataset into subsets. It can be randomly dividing or it 
+can be done conditional on a given categorical variable. For example, for a spatial
+temporal data set, we can either divide the whole data by time or by location. 
+\item Apply the analytic method to each subset parallelly.   
 \item recombine the outputs of the A computations and write results to the HDFS. 
 \end{itemize}  
 
-Hadoop computes the subsets by executing the analyst D[dr] R commands, and 
+Hadoop MapReduce computes the subsets by executing the analyst D[dr] R commands which
+have already been seri, and 
 distributes the subsets across the servers of the cluster into the Hadoop 
 Distributed File System (HDFS). Hadoop runs the 
 
