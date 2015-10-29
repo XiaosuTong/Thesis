@@ -5,7 +5,9 @@
 \subsection{D\&R Statistical Framework}
 
 D\&R \cite{Guha:2012} is a statistical framework for the analysis of large complex
-data that enables feasible and practical analysis of large complex data. The 
+data that enables feasible and practical analysis of large complex data. 
+
+The 
 analyst selects a division method to divide the data into subsets, applies an 
 analytic method of the analysis to each subset independently with no communication
 among subsets, selects a recombination method that is applied to the outputs 
@@ -20,29 +22,45 @@ of all \cite{Hafen:2013}.
  
 \subsection{Computational Environment}
 
-The front end of our computational environment is R \cite{R}, the widely used and 
-highly acclaimed interactive language for data analysis. On the other side, the
-back end is the Hadoop. The core of Hadoop consists of Hadoop Distributed File 
+The front end of our computational environment is R \cite{R}, a widely used 
+software environment for statistical computing and graphics. On the other side, the
+back end is the Hadoop which consists of Hadoop Distributed File 
 System (HDFS) \cite{HDFS} for storage and processing engine (MapReduce) 
 \cite{mapreduce}. RHIPE \cite{Guha:2010}, the R and Hadoop Integrated Programming 
-Environment, bridge the gap between two ends. 
+Environment, bridges the gap between these two ends. 
 
-As analyst, we only need to specify R code to carry out a D\&R job which consists 
-of following three steps:
+As analyst, we only need to specify R commands to carry out a D\&R job which
+consists of following three steps:
 \begin{itemize}
-\item Divide the whole dataset into subsets. It can be randomly dividing or it 
+\item Divide the whole dataset into subsets. It can be randomly dividing or
 can be done conditional on a given categorical variable. For example, for a spatial
 temporal data set, we can either divide the whole data by time or by location. 
 \item Apply the analytic method to each subset parallelly.   
 \item recombine the outputs of the A computations and write results to the HDFS. 
 \end{itemize}  
 
-Hadoop MapReduce computes the subsets by executing the analyst D[dr] R commands which
-have already been seri, and 
-distributes the subsets across the servers of the cluster into the Hadoop 
-Distributed File System (HDFS). Hadoop runs the 
+The first step can be achieved by one MapReduce job using RHIPE R commands which 
+creates the subsets from the original raw data set sat on HDFS and 
+distributes the subsets across the servers of the cluster onto the Hadoop 
+Distributed File System (HDFS) as key-value pairs. Most of situation, the original
+raw data can be a raw text file saved on HDFS.
+
+Thereafter, the second and
+third steps can be implemented with another MapReduce job also specified by
+analyst in RHIPE R commands. In this second MapReduce job, a group of Map
+computation procedures are running embarrassingly parallel with a free core 
+assigned to each, which means independently with no communication among those Map
+procedures. We call those Map procedures Mapper. Then, a data block or a 
+collection of subsets will be passed into those Mappers, and each subset
+will be applied with the analytic method independently.
+
 
 \section{Source of Data}
+
+Historical records of weather such as monthly precipitation and temperatures from the last
+century are an invaluable database to study changes and variability in climate. These data
+also provide the starting point for understanding and modeling the relationship among climate,
+ecological processes and human activities. 
 
 Because of digitization and rapid development of computer hardware, nowadays
 people are able to store, summarize and analyze larger and more 
@@ -93,13 +111,40 @@ in this period which includes 1,236 months.
 
 \section{Initial Analysis: Data and Statistics}
 
+The FTP distribution for the 103-year monthly maximum temperature data set along
+with supporting meta-data can be found at \cite{data}. 
+However, the data set not only includes the raw observed monthly
+maximum temperature, but also infills all missing values by statistical infilled
+method conducted by IMAGe. 
+When using the complete data for further statistical analysis care should be taken
+with the infilled values. Although they are good estimates of the mean they may 
+not reproduce the variability that one would expect from actual point 
+observations of the meteorology. In statistical language, the infilled values are
+the mean of the conditional distribution for the measurement given the observed 
+data. They are not samples from this conditional distribution. 
+So we eliminate all infilled values from our data analysis.
+
 In this section, we describe the procedures of our data downloading and initial 
-processing, followed by summary statistics of the obtained monthly maximum 
+processing, followed by summary statistics of the observed monthly maximum 
 temperature. Further processing of the data into multiple databases of various 
 structures are discussed in details in the following sections along with the 
 corresponding analyses enabled and facilitated by each database.
 
 \subsection{Data Collection and Initial Processing}
+
+The first step of our data collection is to parallelly download 103 data files 
+from IMAGe data base. 
+The raw data set is in text format with 103 files having file names in the form: 
+\texttt{tmax.complete.Ynnn} with \texttt{nnn = 001, 002,} $\cdots$\texttt{, 103} 
+which \texttt{001 = 1895} and \texttt{103 = 1997}. Each separate data file consists
+of the maximum temperature for a single year. Each line of the file is observations
+for one station according to the format: \texttt{station id}, 12 temperature 
+observation (\texttt{Jan - Dec}), 12 observed/infill value codes 
+(\texttt{1=missing}, \texttt{0=observed}). We only keep the observed monthly
+maximum temperature in our analysis. Totally there are 8,125 stations in each file,
+and temperature appears as a integer in tenths of degree
+
+The total size of the data set is 678MB.
 
 \subsection{Summary Statistics}
 some initial plots and summary
