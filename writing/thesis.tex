@@ -47,26 +47,15 @@
 % Define "subfigure" environment used in "demo-figure.tex".
 % CHANGE NEXT LINE?
 \usepackage{subfigure}
-
+\usepackage{framed}
 \usepackage{url}
-
+\usepackage{caption}
 \usepackage{color}
 \usepackage{hyperref}
 \hypersetup{
   colorlinks=false
 }
-\usepackage[most]{tcolorbox}
 
-\newtcolorbox{myframe}[1][]{
-  enhanced,
-  arc=0pt,
-  enlarge top by=13pt,
-  enlarge bottom by=13pt,
-  outer arc=0pt,
-  colback=white,
-  boxrule=0.8pt,
-  #1
-}
 % Title of thesis (used on cover and in abstract).
 % The title shown must be the full, official title of the thesis.
 % Superscripts and subscripts are not permitted in the title.
@@ -242,7 +231,7 @@
 % CHANGE NEXT 7 LINES?
 %\appendices
 %\include{demo-citations}
-%\include{demo-figures}
+\include{demo-figures}
 %\include{demo-mathematics}
 %\include{demo-multicols}
 %\include{demo-tables}

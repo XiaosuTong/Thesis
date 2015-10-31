@@ -150,7 +150,7 @@ information which includes:
   \item The station id, which uniquely identifies each station.
   \item The degree of longitude of station.
   \item The degree of latitude of station.
-  \item The degree of elevation of station.
+  \item The meter of elevation of station.
 \end{enumerate}
 The metadata set is in text format of 244 KB.
 
@@ -173,28 +173,45 @@ through a MapReduce job described as follow.
   into HDFS after Map is finished.  
   \item[Reduce] Reduce is not needed in this MapReduce job.
 \end{description}
+The total raw text files saved on HDFS are around 678MB. 
 
-\
+\subsubsection{Division by Month}
+
+Next, a division by month of the whole data set is created based on plain text
+files. Totally there are 836,875 lines in text files, and each line of the raw
+text file corresponded to twelve monthly maximum temperature observations for a 
+given station in a given year followed by their status code of observation 
+(observed or missing) in terms of 0/1. In order to carry out the oncoming
+analysis, we consider to transform each line of raw text files to be a more
+analysis friendly structure which only has one observation per row
+
 \begin{enumerate}
   \item The station id, which uniquely identifies each station.
-  \item 
-  \item The third etc \ldots
+  \item The degree of longitude of the station.
+  \item The degree of latitude of the station.
+  \item The meter of elevation of the station.
+  \item The station name.
+  \item The year of the observation.
+  \item The month of the observation.
+  \item The observation of the maximum temperature for the given month.
 \end{enumerate}
 
-The total size of the data set is 678MB.
 
 \subsection{Summary Statistics}
 some initial plots and summary
 
 I will look at the data trends and show how they are cyclical in nature and show little long time trends.
 
-\begin{myframe}[width=\textwidth, bottom=28pt, top=20pt]
-I certify that the work presented in the dissertation is my own unless referenced.
+\begin{framed}
+\begin{center}
+  \href{../plots/obs_month.pdf}{Link to figure}
+  \captionof{figure}{Monthly number of observation}
+  \label{obs.month}
+\end{center}
+\end{framed}
 
-WHatever it is!
-
-link to the plot
-\end{myframe}
+Here is how to refer a graph in this thesis. See Figure 
+\href{../plots/obs_month.pdf}{\ref*{obs.month}}
 
 \section{Preliminary Study of Time Series}
 
