@@ -136,13 +136,12 @@ The raw data set is in fixed width text format with 103 files having file names 
 the form: 
 \texttt{tmax.complete.Ynnn} with \texttt{nnn = 001, 002,} $\cdots$\texttt{, 103} 
 which \texttt{001 = 1895} and \texttt{103 = 1997}. Each separate data file consists
-of the maximum temperature for a single year. Each line of the file is observations
-for one station according to the format: \texttt{station id}, 12 temperature 
-observation (\texttt{Jan - Dec}), 12 observed/infill value codes 
+of the maximum temperature for a single year. Each line of the file contains 12
+monthly maximum temperature observations and 12 observed/missing value codes 
 (\texttt{1=missing}, \texttt{0=observed}). We only keep the observed monthly
 maximum temperature in our analysis. Totally there are 8,125 stations in each file,
 and temperature appears as a integer in tenths of Celsius degree. For instance, 73
-in the raw text file should be interpreted as 7.3 degrees. 
+in the raw text file should be interpreted as 7.3 Celsius degrees. 
 
 Additionally, besides the 103 raw data files, there is metadata about stations' 
 information which includes:
@@ -173,20 +172,22 @@ through a MapReduce job described as follow.
   into HDFS after Map is finished.  
   \item[Reduce] Reduce is not needed in this MapReduce job.
 \end{description}
-The total raw text files saved on HDFS are around 678MB. 
+The total raw text files saved on HDFS are around 90MB. Totally there are 836,875 
+lines in text files, and each line of the raw text file corresponded to twelve
+monthly maximum temperature observations for a given station in a given year
+followed by their status code of observation (observed or missing) in terms of 0/1.
 
-\subsubsection{Division by Month}
+\subsubsection{Construction of the initial Database}
 
-Next, a division by month of the whole data set is created based on plain text
-files. Totally there are 836,875 lines in text files, and each line of the raw
-text file corresponded to twelve monthly maximum temperature observations for a 
-given station in a given year followed by their status code of observation 
-(observed or missing) in terms of 0/1. In order to carry out the oncoming
-analysis, we consider to transform each line of raw text files to be a more
-analysis friendly structure which only has one observation per row
+Next, an initial database of the whole data set is created based on plain text
+files. We consider to transform the raw text files to be a more
+analysis friendly structure, which only has one observation per row. Concretely,
+the new structure should include following fields (columns) for each observation.
+We use \texttt{NA} to represent missing value of the maximum temperature for a
+given month:
 
 \begin{enumerate}
-  \item The station id, which uniquely identifies each station.
+  \item The station ID, which uniquely identifies each station.
   \item The degree of longitude of the station.
   \item The degree of latitude of the station.
   \item The meter of elevation of the station.
@@ -196,8 +197,51 @@ analysis friendly structure which only has one observation per row
   \item The observation of the maximum temperature for the given month.
 \end{enumerate}
 
+By utilizing the RHIPE, which bridges the R and Hadoop, the new data structure can
+be easily achieved within one MapReduce job by specifying RHIPE commands in R.
+Moreover, each observation is saved in terms of R object, specifically a data.frame
+with only one row and eight columns.
+We make the choice of R data.frame because it allows us to have different type of
+class for each column, and also it is extremely friendly to a great many of
+statistical analysis functions in R. 
+
+The observation database is fulfilled in a MapReduce job described as
+below:
+
+\begin{description}
+  \item[Input] 103 plain text files saved on HDFS, each of which consists of 8,125 
+  lines. Each line includes information about 12 months maximum temperature for a 
+  given station in a given year. The year information can be pulled from last three
+  characters of the name of each text file, which \texttt{001 = 1895} and 
+  \texttt{103 = 1997}. Lines contain 14 tab-delimited columns:
+  (1) the station id, (2) to (13) the monthly maximum temperature from January to
+  December, (14) a 12-digit character which indicates if 12 monthly maximum 
+  temperature is observed or missing. 
+  \item[Output] 10,042,500 observations, each of which is a key-value pair, with 
+  8,125 unique station ID and 1,236 months as the key, and a one-row R data.frame
+  as value, which includes (1) 
+  \texttt{station name}, the name of station, (2) \texttt{longitude}, degree of 
+  longitude of the station, (3) \texttt{latitude}, the latitude of the station, (4)
+  \texttt{elevation}, the meter of elevation the station, (5) \texttt{year}, year 
+  of the observation, (6) \texttt{month}, month of year (January to December), 
+  (7) \texttt{tmax}, the monthly maximum temperature
+  \item[Map] Parse each line of the text file as a character string. For each line,
+  we split the character string based on separator \texttt{\textbackslash t} by 
+  calling R function \texttt{strsplit}, and then the station ID in the first field 
+  is extracted out and used as the key of the intermediate key-value pairs. The 
+  rest of fields are saved in a R one-row data.frame as the value of the 
+  intermediate key-value pairs. The intermediate key-value pairs are transferred 
+  to Reduce. 
+  \item[Reduce] Identity reduce function do not do anything to the intermediate 
+  key-value pairs besides evenly distributes all intermediate key-value pairs to 
+  multiple files, and save them on HDFS.
+\end{description}
 
 \subsection{Summary Statistics}
+
+In summary, the dataset covers monthly maximum temperature over the period of 103
+years, from Jan 1895 to Dec 1997. 
+Based on the first two divisions of the whole data, we can get some i
 some initial plots and summary
 
 I will look at the data trends and show how they are cyclical in nature and show little long time trends.
