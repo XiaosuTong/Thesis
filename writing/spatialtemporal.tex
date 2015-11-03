@@ -55,7 +55,7 @@ collection of subsets will be passed into those Mappers, and each subset
 will be applied with the analytic method independently.
 
 
-\section{Source of Data}
+\section{Source of the Data}
 
 Historical records of weather such as monthly precipitation and temperatures from the last
 century are an invaluable database to study changes and variability in climate. These data
@@ -228,34 +228,76 @@ below:
   \item[Map] Parse each line of the text file as a character string. For each line,
   we split the character string based on separator \texttt{\textbackslash t} by 
   calling R function \texttt{strsplit}, and then the station ID in the first field 
-  is extracted out and used as the key of the intermediate key-value pairs. The 
-  rest of fields are saved in a R one-row data.frame as the value of the 
-  intermediate key-value pairs. The intermediate key-value pairs are transferred 
-  to Reduce. 
+  is extracted out, and with the month index together are used as the key of the 
+  intermediate key-value pairs. The rest of fields are saved in a R one-row 
+  data.frame as the value of the intermediate key-value pairs. The intermediate 
+  key-value pairs are transferred to Reduce. 
   \item[Reduce] Identity reduce function do not do anything to the intermediate 
   key-value pairs besides evenly distributes all intermediate key-value pairs to 
   multiple files, and save them on HDFS.
 \end{description}
 
-\subsection{Summary Statistics}
+\subsection{Summary of the Data}
 
 In summary, the dataset covers monthly maximum temperature over the period of 103
-years, from Jan 1895 to Dec 1997. 
-Based on the first two divisions of the whole data, we can get some i
-some initial plots and summary
+years, from Jan 1895 to Dec 1997. 8,125 stations are scattered across the 
+conterminous US excluding Hawaii and Alaska. Concretely, the elevation of 
+stations ranges from -59 to 3801 meters, the longitude ranges from -124.73 degree
+to -67 degree, and the latitude ranges from 24.55 degree to 49 degree. Figure 
+\href{../plots/allstationsone.pdf}{\ref*{all.location}} illustrates the location
+of all stations on the map of United States.
 
-I will look at the data trends and show how they are cyclical in nature and show little long time trends.
+\begin{framed}
+\begin{center}
+  \href{../plots/allstationsone.pdf}{Link to figure}
+  \captionof{figure}{The location of all stations}
+  \label{all.location}
+\end{center}
+\end{framed}
+
+Meanwhile, we equally split the stations into 8 groups based on their elevation, 
+which cutting points are at 58m, 162m, 244m, 351m, 581m, 1098m, and 1647m. And 
+then location of stations are demonstrated on map of United States conditional on 
+the elevation.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/allstations.pdf}{Link to figure}
+  \captionof{figure}{The location of stations conditional on elevation}
+  \label{all.location.multi}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/QQelevation.pdf}{Link to figure}
+  \captionof{figure}{Quantiles of elevation of stations}
+  \label{QQelevation}
+\end{center}
+\end{framed}
+
+In Figure \href{../plots/QQelevation.pdf}{\ref*{QQelevation}}, horizontal dash 
+lines are the cutting points of elevation. It shows that more than
+60\% of stations are below 581 meters. Figure 
+\href{../plots/allstations.pdf}{\ref*{all.location.multi}} tells us that those 
+stations are mainly outside of the 
+Pacific Coast Ranges (officially gazetted as the Pacific Mountain System in the 
+United States), which includes the Rocky Mountains, Columbia Mountains, Interior
+Mountains, the Interior Plateau, Sierra Nevada Mountains, the Great Basin mountain 
+ranges. Also, there are 724 station are on the west coast of United States, which
+is between the Pacific Ocean and the Pacific Coast Ranges.
+
 
 \begin{framed}
 \begin{center}
   \href{../plots/obs_month.pdf}{Link to figure}
-  \captionof{figure}{Monthly number of observation}
-  \label{obs.month}
+  \captionof{figure}{The number of observations in each month}
+  \label{QQelevation}
 \end{center}
 \end{framed}
 
-Here is how to refer a graph in this thesis. See Figure 
-\href{../plots/obs_month.pdf}{\ref*{obs.month}}
+
+
 
 \section{Preliminary Study of Time Series}
 
