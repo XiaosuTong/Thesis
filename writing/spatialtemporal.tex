@@ -349,31 +349,67 @@ division by station database via RHIPE on a cluster of 11 servers and 242 proces
 
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
-  unique station ID and 1,236 months as the key, and a one-row R data.frame as the
-  value. The value includes (1) station name, the name of station, (2) longitude, 
-  degree of longitude of the station, (3) latitude, the latitude of the station, 
-  (4) elevation, the meter of elevation the station, (5) year, year of the 
-  observation, (6) month, month of year (January to December), (7) tmax, the 
-  monthly maximum temperature.
+  unique \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame as the
+  value. The value includes (1) \texttt{station.name}, the name of station, (2) 
+  \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
+  the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
+  station, (5) \texttt{year}, year of the observation, (6) \texttt{month}, month 
+  of year (January to December), (7) \texttt{tmax}, the monthly maximum temperature.
   \item[Output] division by station in form of 432 key-value pairs, with station 
   ID as the key, and R data.frame containing 1,236 observations information of
   corresponding station as the value.
   \item[Map]For every input key-value pair, we do not carry out any adjustment on
   the one-row data.frame of value. But we do change the key from a vector of 
-  station ID and month index to station ID only. 
-  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are shuffled
-  and aggregated to be one data.frame. Concretely all one-row data.frame who share
-  the same station ID are shuffled and transfered to one reducer, and then R function 
-  "rbind" is called to combine those one-row data.frame.
+  \texttt{station.id} and month index to \texttt{station.id} only. 
+  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are 
+  aggregated to be one data.frame. Concretely all one-row data.frame who share
+  the same station ID are shuffled and transferred to one reducer, and then R function 
+  "rbind" is called in that reducer to combine those one-row data.frame, which includes
+  (1) \texttt{year}, year of the observation, (2) \texttt{month}, month of year 
+  (January to December), (3) \texttt{tmax}, the monthly maximum temperature. The 
+  rest of information about the station, \texttt{station name}, \texttt{latitude},
+  \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with the
+  data.frame named \texttt{location}.
 \end{description}
 
 \subsection{Time Series Analysis of Each Subset}
 
-After we created the database of division by station 
+After we created the database of division by station, we are ready for the parallel 
+analysis of all subsets of the database. The analysis method we apply to each station
+is Seasonal Trend Loess (SLT). Specifically, we utilize R package named stl2\cite{stl2},
+which provides several enhancements including the ability to deal with missing values 
+and higher order polynomial smoothing compared to the stl method that ships with base R.
+Then we collect the analysis result of 100 randomly sampled stations together to carry
+out the visualization. 
 
 \section{Monthly Maximum Temperature after 1950}
 
 \subsection{Division by Station}
+
+\begin{description}
+  \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
+  unique \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame as the
+  value. The value includes (1) \texttt{station.name}, the name of station, (2) 
+  \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
+  the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
+  station, (5) \texttt{year}, year of the observation, (6) \texttt{month}, month 
+  of year (January to December), (7) \texttt{tmax}, the monthly maximum temperature.
+  \item[Output] division by station in form of 432 key-value pairs, with station 
+  ID as the key, and R data.frame containing 1,236 observations information of
+  corresponding station as the value.
+  \item[Map]For every input key-value pair, we do not carry out any adjustment on
+  the one-row data.frame of value. But we do change the key from a vector of 
+  \texttt{station.id} and month index to \texttt{station.id} only. 
+  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are 
+  aggregated to be one data.frame. Concretely all one-row data.frame who share
+  the same station ID are shuffled and transferred to one reducer, and then R function 
+  "rbind" is called in that reducer to combine those one-row data.frame, which includes
+  (1) \texttt{year}, year of the observation, (2) \texttt{month}, month of year 
+  (January to December), (3) \texttt{tmax}, the monthly maximum temperature. The 
+  rest of information about the station, \texttt{station name}, \texttt{latitude},
+  \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with the
+  data.frame named \texttt{location}.
+\end{description}
 
 \subsection{Division by Month}
 
