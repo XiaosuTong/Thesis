@@ -1,60 +1,5 @@
 \chapter[DIVIDE AND RECOMBINED ANALYSIS TO SPATIAL-TEMPROAL \\ DATA]{DIVIDE AND RECOMBINED ANALYSIS TO SPATIAL-TEMPROAL DATA}
 
-\section{Divide and Recombine (D\&R) for Large Complex Data}
-
-\subsection{D\&R Statistical Framework}
-
-D\&R \cite{Guha:2012} is a statistical framework for the analysis of large complex
-data that enables feasible and practical analysis of large complex data. 
-
-The 
-analyst selects a division method to divide the data into subsets, applies an 
-analytic method of the analysis to each subset independently with no communication
-among subsets, selects a recombination method that is applied to the outputs 
-across subsets to form a result of the analytic method for the entire data.
-
-Analytic methods have two distinct categories, visualization methods whose outputs
-are visual displays, and number-category methods whose outputs are numeric and 
-categorical values. In D\&R, number-category analytic methods are typically applied
-to each of the subsets. Visualization methods are typically applied to each subset 
-in a sample of subsets because often there are too many of them to look at plots 
-of all \cite{Hafen:2013}.
- 
-\subsection{Computational Environment}
-
-The front end of our computational environment is R \cite{R}, a widely used 
-software environment for statistical computing and graphics. On the other side, the
-back end is the Hadoop which consists of Hadoop Distributed File 
-System (HDFS) \cite{HDFS} for storage and processing engine (MapReduce) 
-\cite{mapreduce}. RHIPE \cite{Guha:2010}, the R and Hadoop Integrated Programming 
-Environment, bridges the gap between these two ends. 
-
-As analyst, we only need to specify R commands to carry out a D\&R job which
-consists of following three steps:
-\begin{itemize}
-\item Divide the whole dataset into subsets. It can be randomly dividing or
-can be done conditional on a given categorical variable. For example, for a spatial
-temporal data set, we can either divide the whole data by time or by location. 
-\item Apply the analytic method to each subset parallelly.   
-\item recombine the outputs of the A computations and write results to the HDFS. 
-\end{itemize}  
-
-The first step can be achieved by one MapReduce job using RHIPE R commands which 
-creates the subsets from the original raw data set sat on HDFS and 
-distributes the subsets across the servers of the cluster onto the Hadoop 
-Distributed File System (HDFS) as key-value pairs. Most of situation, the original
-raw data can be a raw text file saved on HDFS.
-
-Thereafter, the second and
-third steps can be implemented with another MapReduce job also specified by
-analyst in RHIPE R commands. In this second MapReduce job, a group of Map
-computation procedures are running embarrassingly parallel with a free core 
-assigned to each, which means independently with no communication among those Map
-procedures. We call those Map procedures the Mapper. Then, a data block or a 
-collection of subsets will be passed into those Mappers, and each subset
-will be applied with the analytic method independently.
-
-
 \section{Source of the Data}
 
 Historical records of weather such as monthly precipitation and temperatures from the last
@@ -219,8 +164,8 @@ below:
   December, (14) a 12-digit character which indicates if 12 monthly maximum 
   temperature is observed or missing. 
   \item[Output] 10,042,500 observations, each of which is a key-value pair, with 
-  8,125 unique station ID and 1,236 months as the key, and a one-row R data.frame
-  as value, which includes (1) 
+  8,125 unique station ID and 1,236 month index together as the key, and a one-row 
+  R data.frame as value, which includes (1) 
   \texttt{station name}, the name of station, (2) \texttt{longitude}, degree of 
   longitude of the station, (3) \texttt{latitude}, the latitude of the station, (4)
   \texttt{elevation}, the meter of elevation the station, (5) \texttt{year}, year 
@@ -331,48 +276,100 @@ Figure \href{../plots/obs_month_byseason.pdf}{\ref*{obs.month.season}}
 \end{center}
 \end{framed}
 
-There is not huge difference among 12 months with respect to the observation count 
-before 1981. However, Figure \href{../plots/obs_month.pdf}{\ref*{obs.month}} and 
+There is not huge difference between 12 month of year with respect to the 
+observation count before 1981. However, Figure 
+\href{../plots/obs_month.pdf}{\ref*{obs.month}} and 
 Figure \href{../plots/obs_month_byseason.pdf}{\ref*{obs.month.season}} both 
 indicate there is a significant drop of observation count on Jan 1982. And among 
 the 16 years after that, January always has the lowest observation count.
 
+Moreover, we found that this drop on Jan 1982 is not caused by adjustment of 
+the stations such as one station shift its location to its neighborhood. It is
+only because the 688 stations got missing observation on Jan 1982, but then they
+went back to be active again on Feb 1982, as shown in Figure 
+\href{../plots/obs_Jan1982.pdf}{\ref*{Jan1982}}. The blue circles represent 
+stations whose observation status were changed to be missing from December 1981
+to January 1982. Meanwhile the magenta solid points represent stations whose
+observation status shifted back to be valid from January 1982 to February 1982.
+If a location has both blue circle and magenta solid point, it means that location
+of weather station suddenly was failing on January 1982 but then went back on
+February 1982. 
 
-\section{Preliminary Study of Time Series}
+\begin{framed}
+\begin{center}
+  \href{../plots/obs_Jan1982.pdf}{Link to figure}
+  \captionof{figure}{The number of observations for Three Months}
+  \label{Jan1982}
+\end{center}
+\end{framed}
 
-Stations without missing value.
+We believe this astonishing number of failure of stations on January 1982 is caused
+by severe weather on January 1982, which may cause the battery in the weather 
+station died.
+From January 11 to January 17, A brutal cold snap sends temperatures to all-time 
+record lows in dozens of cities throughout the Midwestern United States. Especially
+on January 17, 1982, so called "Cold Sunday"\cite{coldsunday}, in numerous cities 
+temperatures fall to their lowest levels in over 100 years. 
+
+\section{Monthly Maximum Temperature without Missing Value}
+
+Before we jump into the analysis of spatial-temporal dimension interactively, we
+start our analysis with the time series analysis on each station independently.
+In this section we consider the stations without missing value, which
+there are 432 stations in total. The for visualization purpose, we randomly sample
+100 stations out of them. Their locations are shown as in Figure 
+\href{../plots/100stations.pdf}{\ref*{100stations}}. For each station, we use 
+STL (Seasonal Trend Loess) method to analysis the time series. 
+Additionally, we would like to carry out the analysis for each station in parallel. 
+
+\begin{framed}
+\begin{center}
+  \href{../plots/100stations.pdf}{Link to figure}
+  \captionof{figure}{The location of the 100 stations}
+  \label{100stations}
+\end{center}
+\end{framed} 
 
 \subsection{Division by Station}
 
+In order to analyze multiple time series in parallel, we need a database or division,
+which groups observations of one station all together. And then STL method is 
+applied to each station independently. Finally, the results of decomposition from
+STL method needs to be readily presented by visualization method so that we can
+compare the results cross multiple stations. 
+
+Fortunately, by using RHIPE, which integrates the R and Hadoop, the division by 
+station and the STL analysis on each station can be handily accomplished.
+On the one hand, R provides analysis friendly data structure and powerful 
+statistical analysis and visualization packages such as STL+, lattice package.
+On the other hand, Hadoop enables the efficient processing of divisions, such as
+subsets of division by station can be represented as key-value pairs saved on 
+HDFS. In the following, we describe in details the procedures to construct the 
+division by station database via RHIPE on a cluster of 11 servers and 242 processors.
+
 \begin{description}
-  \item[Input] 103 plain text files saved on HDFS, each of which consists of 8,125 
-  lines. Each line includes information about 12 months maximum temperature for a 
-  given station in a given year. The year information can be pulled from last three
-  characters of the name of each text file, which \texttt{001 = 1895} and 
-  \texttt{103 = 1997}. Lines contain 14 tab-delimited columns:
-  (1) the station id, (2) to (13) the monthly maximum temperature from January to
-  December, (14) a 12-digit character which indicates if 12 monthly maximum 
-  temperature is observed or missing. 
-  \item[Output] 10,042,500 observations, each of which is a key-value pair, with 
-  8,125 unique station ID and 1,236 months as the key, and a one-row R data.frame
-  as value, which includes (1) 
-  \texttt{station name}, the name of station, (2) \texttt{longitude}, degree of 
-  longitude of the station, (3) \texttt{latitude}, the latitude of the station, (4)
-  \texttt{elevation}, the meter of elevation the station, (5) \texttt{year}, year 
-  of the observation, (6) \texttt{month}, month of year (January to December), 
-  (7) \texttt{tmax}, the monthly maximum temperature
-  \item[Map] Parse each line of the text file as a character string. For each line,
-  we split the character string based on separator \texttt{\textbackslash t} by 
-  calling R function \texttt{strsplit}, and then the station ID in the first field 
-  is extracted out, and with the month index together are used as the key of the 
-  intermediate key-value pairs. The rest of fields are saved in a R one-row 
-  data.frame as the value of the intermediate key-value pairs. The intermediate 
-  key-value pairs are transferred to Reduce. 
-  \item[Reduce] Identity reduce function do not do anything to the intermediate 
-  key-value pairs besides evenly distributes all intermediate key-value pairs to 
-  multiple files, and save them on HDFS.
+  \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
+  unique station ID and 1,236 months as the key, and a one-row R data.frame as the
+  value. The value includes (1) station name, the name of station, (2) longitude, 
+  degree of longitude of the station, (3) latitude, the latitude of the station, 
+  (4) elevation, the meter of elevation the station, (5) year, year of the 
+  observation, (6) month, month of year (January to December), (7) tmax, the 
+  monthly maximum temperature.
+  \item[Output] division by station in form of 432 key-value pairs, with station 
+  ID as the key, and R data.frame containing 1,236 observations information of
+  corresponding station as the value.
+  \item[Map]For every input key-value pair, we do not carry out any adjustment on
+  the one-row data.frame of value. But we do change the key from a vector of 
+  station ID and month index to station ID only. 
+  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are shuffled
+  and aggregated to be one data.frame. Concretely all one-row data.frame who share
+  the same station ID are shuffled and transfered to one reducer, and then R function 
+  "rbind" is called to combine those one-row data.frame.
 \end{description}
 
+\subsection{Time Series Analysis of Each Subset}
+
+After we created the database of division by station 
 
 \section{Monthly Maximum Temperature after 1950}
 
