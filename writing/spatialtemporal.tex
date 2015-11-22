@@ -313,7 +313,7 @@ temperatures fall to their lowest levels in over 100 years.
 
 \section{Monthly Maximum Temperature without Missing Value}
 
-Before we jump into the analysis of spatial-temporal dimension interactively, we
+Before we jump into the analysis of spatial and temporal dimension interactively, we
 start our analysis with the time series analysis on each station independently.
 In this section we consider the stations without missing value, which
 there are 432 stations in total. The for visualization purpose, we randomly sample
@@ -349,15 +349,15 @@ division by station database via RHIPE on a cluster of 11 servers and 242 proces
 
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
-  unique \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame as the
-  value. The value includes (1) \texttt{station.name}, the name of station, (2) 
+  unique \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame 
+  as the value. The value includes (1) \texttt{station.name}, the name of station, (2) 
   \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
   the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
   station, (5) \texttt{year}, year of the observation, (6) \texttt{month}, month 
   of year (January to December), (7) \texttt{tmax}, the monthly maximum temperature.
-  \item[Output] division by station in form of 432 key-value pairs, with station 
-  ID as the key, and R data.frame containing 1,236 observations information of
-  corresponding station as the value.
+  \item[Output] division by station in form of 432 key-value pairs, with 
+  \texttt{station.id} as the key, and R data.frame containing 1,236 observations
+  information of corresponding station as the value.
   \item[Map]For every input key-value pair, we do not carry out any adjustment on
   the one-row data.frame of value. But we do change the key from a vector of 
   \texttt{station.id} and month index to \texttt{station.id} only. 
@@ -381,6 +381,44 @@ which provides several enhancements including the ability to deal with missing v
 and higher order polynomial smoothing compared to the stl method that ships with base R.
 Then we collect the analysis result of 100 randomly sampled stations together to carry
 out the visualization. 
+
+\begin{description}
+  \item[Input] 432 key-value pairs from the division by station database, with 432 
+  unique \texttt{station.id} as the key, and a R data.frame as the value. The value includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, month 
+  of year (January to December), (3) \texttt{tmax}, the monthly maximum temperature.
+  And an attributes named \texttt{location} encompassing \texttt{station.name},
+  \texttt{latitude}, \texttt{longitude}, and \texttt{elevation} is attached to the
+  data.frame.
+  \item[Output] One key-value pair with 1 as the key, and R data.frame with 123,600
+  rows and 11 columns, which contains \texttt{tmax}, seasonal components, trend 
+  components, and remainders, \texttt{year}, \texttt{month}, and station location 
+  information: \texttt{latitude}, \texttt{longitude}, \texttt{elevation}. 
+  \item[Map]For every input key-value pair, we first order the 1,236 observations of 
+  one station by month index from 1 to 1,236. Then we apply STL method on the time series
+  of maximum temperature. The fitting result is also saved in a data.frame. Next, we add a 
+  new column to the data.frame which is the corresponding \texttt{station.id}. Next, we 
+  filter out key-value pairs whose key \texttt{station.id} is not belong in that 100
+  stations. Finally, all keys are replaced to be 1 so that fitting results of all 100 
+  stations can be accumulated into one data.frame in the reducer.
+  \item[Reduce] 100 intermediate key-value pairs who share the same key 1 are transfered 
+  into one reducer. In the reduce function, they are combined together by calling R 
+  function "rbind" to generate the final one data.frame. 
+\end{description}
+
+\subsubsection{Trend Components}
+
+This section will talked about how the trend components look like and how to judge if the
+fit is good or not with respect to the trend.
+
+\subsubsection{Seasonal Components}
+
+This section will talked about how the seasonal components look like and how to judge if 
+the fit is good or not with respect to the seasonal.
+
+\subsubsection{Remainders}
+
+This section will check the distribution of the remainders.
+
 
 \section{Monthly Maximum Temperature after 1950}
 
