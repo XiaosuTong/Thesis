@@ -285,7 +285,7 @@ the 16 years after that, January always has the lowest observation count.
 
 Moreover, we found that this drop on Jan 1982 is not caused by adjustment of 
 the stations such as one station shift its location to its neighborhood. It is
-only because the 688 stations got missing observation on Jan 1982, but then they
+because the 688 stations got missing observation on Jan 1982, but then they
 went back to be active again on Feb 1982, as shown in Figure 
 \href{../plots/obs_Jan1982.pdf}{\ref*{Jan1982}}. The blue circles represent 
 stations whose observation status were changed to be missing from December 1981
@@ -305,11 +305,23 @@ February 1982.
 
 We believe this astonishing number of failure of stations on January 1982 is caused
 by severe weather on January 1982, which may cause the battery in the weather 
-station died.
+station died. As shown in Figure \href{../plots/monthmean.pdf}{\ref*{min.monthmean}},
+the mean of monthly minimum temperature over all stations are plotted against 
+date from 1931 to 1998. We found on January 1982, it reached the minimum value 
+of $-15.65$. And this is only for stations who has record in that month, there 
+were a lot of stations had missing value may have even lower records.  
 From January 11 to January 17, A brutal cold snap sends temperatures to all-time 
 record lows in dozens of cities throughout the Midwestern United States. Especially
 on January 17, 1982, so called "Cold Sunday"\cite{coldsunday}, in numerous cities 
-temperatures fall to their lowest levels in over 100 years. 
+temperatures fall to their lowest levels in over 100 years.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/monthmean.pdf}{Link to figure}
+  \captionof{figure}{The monthly minimum temperature vs. date}
+  \label{min.monthmean}
+\end{center}
+\end{framed}
 
 \section{Monthly Maximum Temperature without Missing Value}
 
@@ -434,16 +446,22 @@ magenta curve.
 \end{center}
 \end{framed}
 
-It is reasonable to 
+Clearly, no matter where the station is, the fitted values (seasonal+trend) are 
+very close to the true values, and also they capture the seasonal pattern in the 
+raw data. Next, we carry out the diagnostic for each components based on visualization.
 
 \textbf{Trend Components}
 
-As shown in Figure \href{../plots/obs_month_byseason.pdf}{\ref*{obs.month.season}}
+In Figure \href{../plots/100stations/first_run/trend.100stations.tmax.pdf}
+{\ref*{firstrun.trend.100stations}}, the trend component is drawn against to month
+index in blue curve conditional on \texttt{station.id}. So each panel is the trend
+component of one station. Again, wherever the station is, the same STL parameter
+setting 
 \begin{framed}
 \begin{center}
-  \href{../plots/obs_month_byseason.pdf}{Link to figure}
+  \href{../plots/100stations/first_run/trend.100stations.tmax.pdf}{Link to figure}
   \captionof{figure}{The number of observations for Three Months}
-  \label{obs.month.season}
+  \label{firstrun.trend.100stations}
 \end{center}
 \end{framed}
 
