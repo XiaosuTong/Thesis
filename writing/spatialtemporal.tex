@@ -380,11 +380,12 @@ is Seasonal Trend Loess (SLT). Specifically, we utilize R package named stl2\cit
 which provides several enhancements including the ability to deal with missing values 
 and higher order polynomial smoothing compared to the stl method that ships with base R.
 Then we collect the analysis result of 100 randomly sampled stations together to carry
-out the visualization. 
+out the visualization. We detail the process of corresponding map-reduce job below.
 
 \begin{description}
   \item[Input] 432 key-value pairs from the division by station database, with 432 
-  unique \texttt{station.id} as the key, and a R data.frame as the value. The value includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, month 
+  unique \texttt{station.id} as the key, and a R data.frame as the value. The value 
+  includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, month 
   of year (January to December), (3) \texttt{tmax}, the monthly maximum temperature.
   And an attributes named \texttt{location} encompassing \texttt{station.name},
   \texttt{latitude}, \texttt{longitude}, and \texttt{elevation} is attached to the
@@ -405,19 +406,63 @@ out the visualization.
   function "rbind" to generate the final one data.frame. 
 \end{description}
 
-\subsubsection{Trend Components}
+As shown in the reduce function above, a set of predefined parameter setting for STL and
+a string vector of the 100 sampled station ID are passed into the map-reduce job by 
+utilizing \texttt{parameters} argument in \texttt{rhwatch} function, which is used to 
+share R objects in the Global Environment of R session on the front-end server to all
+workers of the map-reduce job. After the fitting, we would like to visually check the 
+model validation, with same parameter setting, across all different stations.
 
-This section will talked about how the trend components look like and how to judge if the
-fit is good or not with respect to the trend.
+\subsubsection{First Run}
 
-\subsubsection{Seasonal Components}
+In the first run of parallel STL fit, we specify that parameters to be: \texttt{t.window}
+is 495, \texttt{t.degree} is quadratic, \texttt{s.window} is 77, and \texttt{s.degree} is 
+linear, \texttt{inner} is 10. The first thing we would like to check about with respect to
+the STL fitting is comparing the fitted value with the raw observations. In Figure
+\href{../plots/100stations/first_run/fitted.100stations.tmax.pdf}
+{\ref*{firstrun.fitted.100stations}}, each page is one station. The whole time series with
+1,236 months for one station is chunked into 9 periods. Each of the first 8 periods has
+144 monthly observations, the last period has 84 monthly observations. The raw observations
+are drawn with blue points, and the seasonal component plus trend component are drawn with 
+magenta curve.  
+
+\begin{framed}
+\begin{center}
+  \href{../plots/100stations/first_run/fitted.100stations.tmax.pdf}{Link to figure}
+  \captionof{figure}{The fitted value vs. month}
+  \label{firstrun.fitted.100stations}
+\end{center}
+\end{framed}
+
+It is reasonable to 
+
+\textbf{Trend Components}
+
+As shown in Figure \href{../plots/obs_month_byseason.pdf}{\ref*{obs.month.season}}
+\begin{framed}
+\begin{center}
+  \href{../plots/obs_month_byseason.pdf}{Link to figure}
+  \captionof{figure}{The number of observations for Three Months}
+  \label{obs.month.season}
+\end{center}
+\end{framed}
+
+\textbf{Seasonal Components}
 
 This section will talked about how the seasonal components look like and how to judge if 
 the fit is good or not with respect to the seasonal.
 
-\subsubsection{Remainders}
+\textbf{Remainders}
 
 This section will check the distribution of the remainders.
+
+\subsubsection{Second Run}
+
+In the first run of parallel STL fit, we specify that parameters to be: \texttt{t.window}
+is 495, \texttt{t.degree} is quadratic, \texttt{s.window} is 77, and \texttt{s.degree} is 
+linear, \texttt{inner} is 10. However we randomly sample another 100 stations to be in our
+visualization checking because we would like to see if parallel STL fitting is robust cross
+different parameter setting and different locations.
 
 
 \section{Monthly Maximum Temperature after 1950}
@@ -450,6 +495,31 @@ This section will check the distribution of the remainders.
 \end{description}
 
 \subsection{Division by Month}
+
+\begin{description}
+  \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
+  unique \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame as the
+  value. The value includes (1) \texttt{station.name}, the name of station, (2) 
+  \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
+  the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
+  station, (5) \texttt{year}, year of the observation, (6) \texttt{month}, month 
+  of year (January to December), (7) \texttt{tmax}, the monthly maximum temperature.
+  \item[Output] division by station in form of 432 key-value pairs, with station 
+  ID as the key, and R data.frame containing 1,236 observations information of
+  corresponding station as the value.
+  \item[Map]For every input key-value pair, we do not carry out any adjustment on
+  the one-row data.frame of value. But we do change the key from a vector of 
+  \texttt{station.id} and month index to \texttt{station.id} only. 
+  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are 
+  aggregated to be one data.frame. Concretely all one-row data.frame who share
+  the same station ID are shuffled and transferred to one reducer, and then R function 
+  "rbind" is called in that reducer to combine those one-row data.frame, which includes
+  (1) \texttt{year}, year of the observation, (2) \texttt{month}, month of year 
+  (January to December), (3) \texttt{tmax}, the monthly maximum temperature. The 
+  rest of information about the station, \texttt{station.name}, \texttt{latitude},
+  \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with the
+  data.frame named \texttt{location}.
+\end{description}
 
 \subsection{Conditionally Parametric Model}
 
