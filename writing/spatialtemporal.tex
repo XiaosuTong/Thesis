@@ -363,7 +363,7 @@ division by station database via RHIPE on a cluster of 11 servers and 242 proces
 
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
-  unique \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame 
+  \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame 
   as the value. The value includes (1) \texttt{station.name}, the name of station, (2) 
   \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
   the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
@@ -572,29 +572,109 @@ only consider stations with observations after Jan 1950.
 \subsection{Database of Division by Station}
 
 Similar with section~\ref{sec:divibyStation}, we construct a database, from the
-initial database, of division by station first for the data after 1950. Next we 
+initial database, of division by station for the data after 1950. Next we 
 describe the details about the procedure of creating this station based database.
 
 \begin{description}
-  \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
-  unique \texttt{station.id} and 1,236 months as the key, and a one-row R 
-  data.frame as the value. 
+  \item[Input] 10,042,500 key-value pairs from the initial database, with one of
+  8,125 \texttt{station.id} and one of 1,236 months together as the key, and a 
+  one-row R data.frame as the value. 
   \item[Output] division by station in form of 7,738 key-value pairs, with 
   \texttt{station.id} as the key, and R data.frame containing 576 observations 
   of corresponding station as the value.
   \item[Map]First input key-value pairs whose key contains year larger than 1950
   are filtered out. Next we change the key from a vector of \texttt{station.id} 
   and month index to \texttt{station.id} only. 
-  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are 
+  \item[Reduce] 576 of one-row data.frame corresponding to one station are 
   aggregated to be one data.frame. Concretely all one-row data.frame who share
-  the same station ID are shuffled and transferred to one reducer, and then R function 
-  "rbind" is called in that reducer to combine those one-row data.frame, which includes
-  (1) \texttt{year}, year of the observation, (2) \texttt{month}, month of year 
-  (January to December), (3) \texttt{tmax}, the monthly maximum temperature. The 
-  rest of information about the station, \texttt{station.name}, \texttt{latitude},
-  \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with the
-  data.frame named \texttt{location}.
+  the same \texttt{station.id} are shuffled and transferred to one reducer, and 
+  then R function "rbind" is called in that reducer to combine those one-row 
+  data.frame, which includes (1) \texttt{year}, year of the observation, 
+  (2) \texttt{month}, month of year (January to December), (3) \texttt{tmax}, 
+  the monthly maximum temperature, (4) \texttt{latitude}, (5) \texttt{longitude}, 
+  and (6) \texttt{elevation}. We filter out stations who does not have any valid
+  observation in 576 months. So finally there are 7,738 key-value pairs have been
+  generated and save on HDFS. 
 \end{description}
+
+\subsubsection{Location of Stations}
+
+Figure \href{../plots/a1950stations.pdf}{\ref*{a1950.location}} illustrates the location 
+of 7,738 stations on the map of United States.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950stations.pdf}{Link to figure}
+  \captionof{figure}{The location of stations after 1950}
+  \label{a1950.location}
+\end{center}
+\end{framed}
+
+A kd-tree with 128 cells is built based on 4,978 stations, each of which has more 
+than 300 observations. Then one station is sampled from each cell randomly. The 
+blue dots on the graph show the locations of these 128 sampled stations. The red 
+dashed lines indicate the boundry of cells of kd-tree. An index number from 1 to 
+128 is assigned to each station to illustrate which cell the station is from. 
+
+\subsection{Experiment of Tunning Parameters of STL}
+
+In the experiment, we are trying to use 270 observations to predict oncoming 36 
+months of maximum temperature. Then the prediction error is calculated to measure 
+the prediction ability. We want to see how the different parameter setting affect 
+the prediction ability. For each station, we use the first 600 observations to 
+predict 36 oncoming observations, then move the range window of training dataset 
+one observation ahead, and predict the next 36 observations. There are 1236 
+observations for each station, so we conduct 271 replicates for each station.
+
+\begin{description}
+  \item[Input] 10,042,500 key-value pairs from the initial database, with one of
+  8,125 \texttt{station.id} and one of 1,236 months together as the key, and a 
+  one-row R data.frame as the value. 
+  \item[Output] division by station in form of 7,738 key-value pairs, with 
+  \texttt{station.id} as the key, and R data.frame containing 576 observations 
+  of corresponding station as the value.
+  \item[Map]First input key-value pairs whose key contains year larger than 1950
+  are filtered out. Next we change the key from a vector of \texttt{station.id} 
+  and month index to \texttt{station.id} only. 
+  \item[Reduce] 576 of one-row data.frame corresponding to one station are 
+  aggregated to be one data.frame. Concretely all one-row data.frame who share
+  the same \texttt{station.id} are shuffled and transferred to one reducer, and 
+  then R function "rbind" is called in that reducer to combine those one-row 
+  data.frame, which includes (1) \texttt{year}, year of the observation, 
+  (2) \texttt{month}, month of year (January to December), (3) \texttt{tmax}, 
+  the monthly maximum temperature, \texttt{latitude}, \texttt{longitude}, 
+  \texttt{elevation}. We filter out stations who does not have any valid
+  observation in 576 months. So finally there are 7,738 key-value pairs have been
+  generated and save on HDFS. 
+\end{description} 
+
+\subsubsection{Experiment 1,  
+\textmd{$w_s=c(21, 30, 39)$, $w_t=c(231, 313, 451)$, $d_s=1$, $d_t=2$}
+}
+
+Each station is plotted on one page, and the order of the stations for a given 
+parameter set up is decided as follow. Based on the normal quantile plot of 
+prediction error for each station, the total amount of deviation, the distribution 
+of prediction error from normal distribution, is calculated over all lag and all 
+parameter set up. Then the stations are ordered from the smallest to the largest 
+in term of deviation.
+
+
+\subsubsection{Experiment 2,  
+\textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=c(123, 313, 451)$, $d_s=1$, $d_t=2$}
+}
+
+\subsubsection{Experiment 3,  
+\textmd{$w_s=$"periodic", $w_t=c(41, 83, 123, 313, 451)$, $d_s=1$, $d_t=c(1,2)$}
+}
+
+\subsubsection{Experiment 4,  
+\textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=241$, $d_s=1$, $d_t=c(1,2)$}
+}
+
+\subsubsection{Experiment 5,  
+\textmd{$w_s=c(11, 21, 31, 47$,"periodic"$)$, $w_t=241$, $d_s=c(1,2)$, $d_t=1$}
+}
 
 \subsection{Database of Division by Month}
 
@@ -623,6 +703,11 @@ describe the details about the procedure of creating this station based database
   data.frame named \texttt{location}.
 \end{description}
 
+
+\subsection{Spatial Loess with Elevation}
+
+
+
 \subsubsection{Conditionally Parametric Model}
 
 A nonparametric surface is conditionally
@@ -638,18 +723,21 @@ result in a more parsimonious fit.
 An exceedingly simple modification of loess fitting yields a conditionally
 parametric surface. We simply ignore the conditionally parametric factors
 in computing the Euclidean distances that are used in the definition of the
-neighborhood weights, Wi(x).
+neighborhood weights, $W_i$(x).
 
-The method for making a loess fit conditionally parametric in a proper subset of predictors is simple.
-The subset is ignored in computing the Euclidean distances that are used in the definition of the
-neighborhood weights, $\omega_i(x)$. Let us use an example to explain why this produces a conditionally 
-parametric surface. Suppose that there are two predictors, $\mu$ and $\nu$, and $\lambda=2$. Suppose
-we specify $\mu$ to be a conditionally parametric predictor. Since the weight function ignores the 
-variable $\mu$ the $i$th weight, $\omega_i(\mu, \nu)$ for the fit at $(\mu, \nu)$, is the same as the
-$i$th weight, $\omega_i(\mu+t, \nu)$, for the fit at $(\mu+t, \nu)$. Thus the quadratic polynomial 
-that is fitted locally for the fit at $(\mu, \nu)$ is the same as the quadratic polynomial that is 
-fitted locally for the fit at $(\mu+t, \nu)$, whatever the value of $t$. So for the fixed value
-of $\nu$, the surface is exactly this quadratic as a function of the first predictor.
+The method for making a loess fit conditionally parametric in a proper subset of
+predictors is simple. The subset is ignored in computing the Euclidean distances 
+that are used in the definition of the neighborhood weights, $\omega_i(x)$. Let 
+us use an example to explain why this produces a conditionally parametric surface. 
+Suppose that there are two predictors, $\mu$ and $\nu$, and $\lambda=2$. Suppose 
+we specify $\mu$ to be a conditionally parametric predictor. Since the weight 
+function ignores the variable $\mu$ the $i$th weight, $\omega_i(\mu, \nu)$ for 
+the fit at $(\mu, \nu)$, is the same as the $i$th weight, $\omega_i(\mu+t, \nu)$, 
+for the fit at $(\mu+t, \nu)$. Thus the quadratic polynomial that is fitted locally 
+for the fit at $(\mu, \nu)$ is the same as the quadratic polynomial that is fitted 
+locally for the fit at $(\mu+t, \nu)$, whatever the value of $t$. So for the fixed 
+value of $\nu$, the surface is exactly this quadratic as a function of the first 
+predictor.
 
 \section{Modeling: Decomposition of Spatial Temporal Data}
 
