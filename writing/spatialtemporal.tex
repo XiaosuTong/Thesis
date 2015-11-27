@@ -364,8 +364,8 @@ division by station database via RHIPE on a cluster of 11 servers and 242 proces
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
   \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame 
-  as the value. The value includes (1) \texttt{station.name}, the name of station, (2) 
-  \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
+  as the value. The value includes (1) \texttt{station.name}, the name of station, 
+  (2) \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
   the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
   station, (5) \texttt{year}, year of the observation, (6) \texttt{month}, month 
   of year (January to December), (7) \texttt{tmax}, the monthly maximum temperature.
@@ -382,8 +382,8 @@ division by station database via RHIPE on a cluster of 11 servers and 242 proces
   (1) \texttt{year}, year of the observation, (2) \texttt{month}, month of year 
   (January to December), (3) \texttt{tmax}, the monthly maximum temperature. The 
   rest of information about the station, \texttt{station.name}, \texttt{latitude},
-  \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with the
-  data.frame named \texttt{location}.
+  \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with 
+  the data.frame named \texttt{location}.
 \end{description}
 
 \subsection{Time Series Analysis of Each Subset}
@@ -394,7 +394,7 @@ is Seasonal Trend Loess (SLT). Specifically, we utilize R package named stl2\cit
 which provides several enhancements including the ability to deal with missing values 
 and higher order polynomial smoothing compared to the stl method that ships with 
 base R. Then we collect the analysis result of 100 randomly sampled stations together 
-to carry out the visualization. We detail the process of corresponding map-reduce 
+to carry out the visualization. We detail the process of corresponding MapReduce 
 job below.
 
 \begin{description}
@@ -423,12 +423,12 @@ job below.
 \end{description}
 
 As shown in the reduce function above, a set of predefined parameter setting for 
-STL and a string vector of the 100 sampled station ID are passed into the map-reduce 
-job by utilizing \texttt{parameters} argument in \texttt{rhwatch} function, which 
-is used to share R objects in the Global Environment of R session on the front-end 
-server to all workers of the map-reduce job. After the fitting, we would like to 
-visually check the model validation, with same parameter setting, across all 
-different stations.
+STL and a string vector of the 100 sampled \texttt{station.id} are passed into 
+the MapReduce job by utilizing \texttt{parameters} argument in \texttt{rhwatch} 
+function, which is used to share R objects in the Global Environment of R session 
+on the front-end server to all workers of the MapReduce job. After the fitting, 
+we would like to visually check the model validation, with same parameter setting, 
+across all different stations.
 
 \subsubsection{First Run}
 
@@ -599,8 +599,8 @@ describe the details about the procedure of creating this station based database
 
 \subsubsection{Location of Stations}
 
-Figure \href{../plots/a1950stations.pdf}{\ref*{a1950.location}} illustrates the location 
-of 7,738 stations on the map of United States.
+Figure \href{../plots/a1950stations.pdf}{\ref*{a1950.location}} illustrates the 
+location of 7,738 stations on the map of United States.
 
 \begin{framed}
 \begin{center}
@@ -610,21 +610,73 @@ of 7,738 stations on the map of United States.
 \end{center}
 \end{framed}
 
-A kd-tree with 128 cells is built based on 4,978 stations, each of which has more 
-than 300 observations. Then one station is sampled from each cell randomly. The 
-blue dots on the graph show the locations of these 128 sampled stations. The red 
-dashed lines indicate the boundry of cells of kd-tree. An index number from 1 to 
-128 is assigned to each station to illustrate which cell the station is from. 
+As shown in Figure \href{../plots/vertices.a1950.pdf}{\ref*{a1950.vertices}}
+A kd-tree with 128 cells is built based on 7,738 stations. Then one station is 
+sampled from each cell randomly. The blue dots on the graph show the locations 
+of these 128 sampled stations. The red dashed lines indicate the boundary of cells 
+of kd-tree. An index number from 1 to 128 is assigned to each station to 
+illustrate which cell the station comes from. 
+
+\begin{framed}
+\begin{center}
+  \href{../plots/vertices.a1950.pdf}{Link to figure}
+  \captionof{figure}{The location of 128 stations sampled from each cell of a kd-tree}
+  \label{a1950.vertices}
+\end{center}
+\end{framed}
+
+We also graph the quantile plot of the log base 2 of elevation of stations in each
+cell in Figure \href{../plots/elev.dist.bycell.pdf}{\ref*{elev.dist.bycell}}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/elev.dist.bycell.pdf}{Link to figure}
+  \captionof{figure}{The quantiles of elevation of stations conditional on cell}
+  \label{elev.dist.bycell}
+\end{center}
+\end{framed}
+
+Later on these 128 stations are used in the section XXX for visualization and 
+diagnostic purpose.
 
 \subsection{Experiment of Tunning Parameters of STL}
 
-In the experiment, we are trying to use 270 observations to predict oncoming 36 
-months of maximum temperature. Then the prediction error is calculated to measure 
-the prediction ability. We want to see how the different parameter setting affect 
-the prediction ability. For each station, we use the first 600 observations to 
-predict 36 oncoming observations, then move the range window of training dataset 
-one observation ahead, and predict the next 36 observations. There are 1236 
-observations for each station, so we conduct 271 replicates for each station.
+In the experiment, we are trying to use consecutive 270 observations as training 
+data to predict oncoming 36 months of maximum temperature. Then the prediction 
+error is calculated to measure the prediction ability. 
+We want to see how the different parameter setting affect 
+the prediction ability. Concretely, for each station, we use the first 270 
+observations to predict 36 oncoming observations, then move the range window of 
+training dataset one observation ahead, and predict the next 36 observations. 
+There are 576 observations for each station, so we conduct 271 prediction of 36
+observations for each station.
+
+If we conduct the experiment above in series, we have to run 
+$271 \times 7738 = 2096998$ number of STL fitting for all stations in R, which is 
+extremely computational inefficient. Fortunately, because of using RHIPE
+(R and Hadoop Integrated Programming Environment), we can easily handle this 
+experiment in parallel. Intuitively, we carry out the STL fittings of multiple 
+stations in parallel. Concretely, based on database of division by station, map
+function which executes 271 STL prediction is applied to each of 7,738 station.
+However, this is still computationally heavy for each mapper since all 271 STL 
+fitting have to be sequentially executed in R with either \texttt{for} loop or 
+\texttt{lapply} function. We have to consider other more efficient parallel 
+procedure for the experiment.
+
+There are other two ways to carry out the parallel procedure, which are less 
+heavy with respect to computation of each mapper. One is to create a share
+R object, namely a data.frame, which containing all 576 observations of all 7,738 
+stations, and is saved on HDFS immediately right after the MapReduce job is 
+initialized. The data.frame is order by \texttt{station.id}, \texttt{year}, and
+\texttt{month}. Then in the MapReduce job, we simulate the key of input key-value
+pairs to be sequence of integer from 1 to 2,096,998, each of which represents the
+row index of the first observation of each STL fitting. The corresponding value 
+is the same integer as the key. For instance, if key-value pair is 
+\texttt{(3001,3001)}, it means the corresponding map function applied to this 
+key-value pair will use observations from August 1951 to Jan 1974 (20th observation
+to 289th observation inclusively) to predict the maximum temperature of Feb 1974
+to Jan 1977 for the 12th station.
+
 
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, with one of
