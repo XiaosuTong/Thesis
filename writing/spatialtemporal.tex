@@ -571,33 +571,55 @@ only consider stations with observations after Jan 1950.
 
 \subsection{Database of Division by Month}
 
+The first database we create for data after 1950 is called division by month. In
+the following paragraph we describe the generation of such database with details.
+
 \begin{description}
-  \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
-  unique \texttt{station.id} and 1,236 months as the key, and a one-row R 
-  data.frame as the value. The value includes (1) \texttt{station.name}, the name of station, (2) 
-  \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
-  the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
-  station, (5) \texttt{year}, year of the observation, (6) \texttt{month}, month 
-  of year (January to December), (7) \texttt{tmax}, the monthly maximum temperature.
-  \item[Output] division by station in form of 432 key-value pairs, with station 
-  ID as the key, and R data.frame containing 1,236 observations information of
-  corresponding station as the value.
-  \item[Map]For every input key-value pair, we do not carry out any adjustment on
-  the one-row data.frame of value. But we do change the key from a vector of 
-  \texttt{station.id} and month index to \texttt{station.id} only. 
-  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are 
-  aggregated to be one data.frame. Concretely all one-row data.frame who share
-  the same station ID are shuffled and transferred to one reducer, and then R function 
-  "rbind" is called in that reducer to combine those one-row data.frame, which includes
-  (1) \texttt{year}, year of the observation, (2) \texttt{month}, month of year 
-  (January to December), (3) \texttt{tmax}, the monthly maximum temperature. The 
-  rest of information about the station, \texttt{station.name}, \texttt{latitude},
-  \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with the
-  data.frame named \texttt{location}.
+  \item[Input] 10,042,500 key-value pairs from the initial database, key is the
+  vector with one of 8,125 unique \texttt{station.id} and one of 1,236 month 
+  index, and a one-row R data.frame as the value. The value includes 
+  (1) \texttt{station.name}, the name of station, (2) \texttt{longitude}, degree 
+  of longitude of the station, (3) \texttt{latitude}, the latitude of the station, 
+  (4) \texttt{elevation}, the meter of elevation the station, (5) \texttt{year}, 
+  year of the observation, (6) \texttt{month}, month of year (January to 
+  December), (7) \texttt{tmax}, the monthly maximum temperature.
+  \item[Output] division by month in form of 576 key-value pairs, with vector of
+  \texttt{year} and \texttt{month} as the key, a R data.frame containing 7,738 
+  observations corresponding month as the value.
+  \item[Map]For every input key-value pair, we include a new column named 
+  \texttt{station.id} to the data.frame, and remove the \texttt{year} and 
+  \texttt{month} from the value to be the key of intermediate key-value pairs. 
+  \item[Reduce] 7,738 of one-row data.frame corresponding to one month are 
+  aggregated to be one data.frame. Specifically all one-row data.frame who share
+  the same \texttt{year} and \texttt{month} are shuffled and transferred to one 
+  reducer, and then R function "rbind" is called in that reducer to combine those 
+  one-row data.frame.
 \end{description}
 
 
-\subsection{Spatial Loess with Elevation}
+For each month, it is a spatial regularization of observation of maximum temperature 
+over 7,738 locations. But around 2,000 different stations have missing value in 
+each month. For instance, in Figure 
+\href{../plots/tmax.a1950.status.pdf}{\ref*{a1950.status}},
+we illustrate the observation status of 7,738 stations for 100 random sampled 
+months.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/tmax.a1950.status.pdf}
+  {Link to figure}
+  \captionof{figure}{The observation status of 7,738 stations on 100 months}
+  \label{a1950.status}
+\end{center}
+\end{framed}
+
+It is not hard to notice that the density of stations with failure is very sparse
+compared with stations with valid observation 
+
+
+\subsection{Spatial Analysis without Elevation}
+
+\subsection{Spatial Analysis with Elevation}
 
 
 
@@ -640,8 +662,8 @@ describe the details about the procedure of creating this station based database
 
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, with one of
-  8,125 \texttt{station.id} and one of 1,236 months together as the key, and a 
-  one-row R data.frame as the value. 
+  unique 8,125 \texttt{station.id} and one of 1,236 months together as the key, 
+  and a one-row R data.frame as the value. 
   \item[Output] division by station in form of 7,738 key-value pairs, with 
   \texttt{station.id} as the key, and R data.frame containing 576 observations 
   of corresponding station as the value.
@@ -714,6 +736,8 @@ training dataset one observation ahead, and predict the next 36 observations.
 There are 576 observations for each station, so we conduct 271 prediction of 36
 observations for each station.
 
+\subsubsection{Generating Database for Experiment}
+
 If we conduct the experiment above in series, we have to run 
 $271 \times 7738 = 2096998$ number of STL fitting for all stations in R, which is 
 extremely computational inefficient. Fortunately, because of using RHIPE
@@ -747,12 +771,41 @@ R object is loaded into memory with multiple copies which is inefficient with
 respect to memory usage. As a result, we consider another way to perform the 
 parallel computation. 
 
-We detail the procedure of the experiment in the following MapReduce job.
+So the method we finally chose is based on a new database we generated based on 
+by station database of stations after 1950. We split one key-value pairs from by 
+stations database to multiple key-value pairs in map function which we called 
+FlatMap function. Specifically, the map function read in one key-value pairs, one
+for each STL prediction fit. Totally, there are $2,096,998$ new key-value pairs 
+saved on HDFS as the database for the experiments.
+
+We detail the procedure of generating experiment database in the following 
+MapReduce job.
 
 \begin{description}
-  \item[Input] 10,042,500 key-value pairs from the initial database, with one of
-  8,125 \texttt{station.id} and one of 1,236 months together as the key, and a 
-  one-row R data.frame as the value. 
+  \item[Input] 7,738 key-value pairs from the division by station database, with 
+  \texttt{station.id} as the key, and R data.frame including 576 observations as
+  the value.
+  \item[Output] experiment database in form of 2,096,998 key-value pairs, with 
+  vector of \texttt{station.id} and month index \texttt{i} of starting date of 
+  training data as the key, and R data.frame containing 271 training data 
+  observations and 36 testing observations as the value.
+  \item[Map] For each input key-value pairs, we create 271 intermediate key-value
+  pairs. We loop over month index \texttt{i} from 1 to 271, which represents the
+  starting month of the training data. The key of intermediate key-value pairs
+  is vector of \texttt{station.id} and \texttt{i}, the value contains 271 
+  training data (starting from \texttt{i}th month) and 36 testing data, which is 
+  a R data.frame with 307 rows and 7 columns.
+  \item[Reduce] Identity reduce function do not do anything to the intermediate 
+  key-value pairs besides evenly distributes all intermediate key-value pairs to 
+  multiple files, and save them on HDFS.
+\end{description} 
+
+In each
+Next, we demonstrate the MapReduce job reading above database from HDFS, and then
+process the STL fitting on each key-value pairs with pre-defined parameters.
+
+\begin{description}
+  \item[Input] 2,096,998 key-value pairs read from experiment database on HDFS.
   \item[Output] division by station in form of 7,738 key-value pairs, with 
   \texttt{station.id} as the key, and R data.frame containing 576 observations 
   of corresponding station as the value.
