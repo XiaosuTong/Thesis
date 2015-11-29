@@ -378,12 +378,11 @@ division by station database via RHIPE on a cluster of 11 servers and 242 proces
   \item[Reduce] 1,236 of one-row data.frame corresponding to one station are 
   aggregated to be one data.frame. Concretely all one-row data.frame who share
   the same station ID are shuffled and transferred to one reducer, and then R function 
-  "rbind" is called in that reducer to combine those one-row data.frame, which includes
-  (1) \texttt{year}, year of the observation, (2) \texttt{month}, month of year 
-  (January to December), (3) \texttt{tmax}, the monthly maximum temperature. The 
-  rest of information about the station, \texttt{station.name}, \texttt{latitude},
-  \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with 
-  the data.frame named \texttt{location}.
+  \texttt{rbind} is called in that reducer to combine those one-row data.frame, 
+  which includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, 
+  month of year (January to December), (3) \texttt{tmax}, the monthly maximum 
+  temperature. The rest of information about the station, \texttt{station.name}, 
+  \texttt{latitude}, \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with the data.frame named \texttt{location}.
 \end{description}
 
 \subsection{Time Series Analysis of Each Subset}
@@ -418,8 +417,8 @@ job below.
   replaced to be 1 so that fitting results of all 100 stations can be accumulated 
   into one data.frame in the reducer. \item[Reduce] 100 intermediate key-value 
   pairs who share the same key 1 are transfered into one reducer. In the reduce 
-  function, they are combined together by calling R function "rbind" to generate 
-  the final one data.frame. 
+  function, they are combined together by calling R function \texttt{rbind} to 
+  generate the final one data.frame. 
 \end{description}
 
 As shown in the reduce function above, a set of predefined parameter setting for 
@@ -592,8 +591,8 @@ the following paragraph we describe the generation of such database with details
   \item[Reduce] 7,738 of one-row data.frame corresponding to one month are 
   aggregated to be one data.frame. Specifically all one-row data.frame who share
   the same \texttt{year} and \texttt{month} are shuffled and transferred to one 
-  reducer, and then R function "rbind" is called in that reducer to combine those 
-  one-row data.frame.
+  reducer, and then R function \texttt{rbind} is called in that reducer to combine 
+  those one-row data.frame.
 \end{description}
 
 
@@ -608,26 +607,61 @@ months.
 \begin{center}
   \href{../plots/tmax.a1950.status.pdf}
   {Link to figure}
-  \captionof{figure}{The observation status of 7,738 stations on 100 months}
+  \captionof{figure}{The observation status of stations on 100 months}
   \label{a1950.status}
 \end{center}
 \end{framed}
 
-It is not hard to notice that the density of stations with failure is very sparse
-compared with stations with valid observation 
-
 
 \subsection{Spatial Analysis without Elevation}
 
+\subsubsection{Distance Calculation of Neighbors}
+
+As we mentioned in section~\ref{sec:loess}, Loess method calculates the weights 
+$\omega_i(x)$
+for weighted least square based on the distance of neighbors $x_i$ to the target 
+point $x$. The distance calculation of $d(x_i, x)$ is based on Euclidean distance 
+(in two dimension for example):
+$$
+d(x_i, x) = \| x - x_i \|_2
+$$
+ 
+In the spatial loess fitting, however, the Euclidean distance is apparently not 
+appropriate. A more reasonable and realistic distance definition is the Great-circle 
+distance, which is the shortest distance between two points on the surface of a 
+sphere, measured along the surface of the sphere (as opposed to a straight line 
+through the sphere's interior). The distance between two points in Euclidean 
+space is the length of a straight line between them, but on the sphere there are 
+no straight lines. In non-Euclidean geometry, straight lines are replaced with 
+geodesics. Geodesics on the sphere are the great circles (circles on the sphere 
+whose centers coincide with the center of the sphere).
+
+Through any two points on a sphere which are not directly opposite each other, 
+there is a unique great circle. The two points separate the great circle into 
+two arcs. The length of the shorter arc is the great-circle distance between the 
+points\cite{greatcircle}.
+
+Explicitly, let $\phi_a$, $\lambda_a$ and $\phi_b$, $\lambda_b$ be the geographical 
+latitude and longitude of two points $a$ and $b$, and $\Delta \phi$, 
+$\Delta \lambda$ their absolute differences; then $\Delta \sigma$ the central angle 
+between them, is given by:
+$$
+\Delta \sigma_{a,b} = 2 \arcsin \sqrt{ \sin^2 ( \frac{\Delta \phi}{2} ) + \cos \phi_a \cdot \cos \phi_b \cdot \sin^2 ( \frac{\Delta \lambda}{2} )}
+$$ 
+Then the distance $d(a,b)$, i.e. the arc length, for a sphere of radius $r$ is
+$$
+d(a,b) = r \Delta \lambda_{a,b}
+$$
+
 \subsection{Spatial Analysis with Elevation}
 
-
+For each of 576 months after 1950, we 
 
 \subsubsection{Conditionally Parametric Model}
 
 A nonparametric surface is conditionally
 parametric if we can divide the factors up into two disjoint subsets
-A and ? with the following property: given the values of the factors in A,
+A and B with the following property: given the values of the factors in A,
 the surface is a member of a parametric class as a function of the the factors
 in B. We say that the surface is conditionally parametric in A.
 It makes sense to specify a regression surface to be conditionally parametric
@@ -655,6 +689,7 @@ value of $\nu$, the surface is exactly this quadratic as a function of the first
 predictor.
 
 \subsection{Database of Division by Station}
+\label{sec:a1950.divibyStation}
 
 Similar with section~\ref{sec:divibyStation}, we construct a database, from the
 initial database, of division by station for the data after 1950. Next we 
@@ -673,7 +708,7 @@ describe the details about the procedure of creating this station based database
   \item[Reduce] 576 of one-row data.frame corresponding to one station are 
   aggregated to be one data.frame. Concretely all one-row data.frame who share
   the same \texttt{station.id} are shuffled and transferred to one reducer, and 
-  then R function "rbind" is called in that reducer to combine those one-row 
+  then R function \texttt{rbind} is called in that reducer to combine those one-row 
   data.frame, which includes (1) \texttt{year}, year of the observation, 
   (2) \texttt{month}, month of year (January to December), (3) \texttt{tmax}, 
   the monthly maximum temperature, (4) \texttt{latitude}, (5) \texttt{longitude}, 
@@ -771,7 +806,7 @@ R object is loaded into memory with multiple copies which is inefficient with
 respect to memory usage. As a result, we consider another way to perform the 
 parallel computation. 
 
-So the method we finally chose is based on a new database we generated based on 
+So the database we finally generated is based on 
 by station database of stations after 1950. We split one key-value pairs from by 
 stations database to multiple key-value pairs in map function which we called 
 FlatMap function. Specifically, the map function read in one key-value pairs, one
@@ -800,38 +835,110 @@ MapReduce job.
   multiple files, and save them on HDFS.
 \end{description} 
 
-In each
-Next, we demonstrate the MapReduce job reading above database from HDFS, and then
-process the STL fitting on each key-value pairs with pre-defined parameters.
+Although the database is created on HDFS for the experiments after previous 
+MapReduce job, the parameter set for STL fitting is needed to be chose and passed 
+to each STL fitting. Moreover, we want to find the best parameter set by exploring
+the parameter space. The factors we are going to tun are $w_t$, $w_s$, $d_t$, 
+and $d_s$. Within each factorial experiment, we conduct multiple STL fitting with 
+different parameter set for some given factors, and we define the group index of 
+parameter setting to be variable \texttt{group}. FOr example, in the Experiment 1,
+the factors we choose is $w_s$ and $w_t$, each of which has three levels. The 
+total number of group of parameter setting is 9.
+
+Next, we demonstrate the MapReduce job reading in above database from HDFS, and 
+then process the STL fitting on each key-value pairs with one group of pre-defined 
+parameters. 
 
 \begin{description}
   \item[Input] 2,096,998 key-value pairs read from experiment database on HDFS.
-  \item[Output] division by station in form of 7,738 key-value pairs, with 
-  \texttt{station.id} as the key, and R data.frame containing 576 observations 
-  of corresponding station as the value.
-  \item[Map]First input key-value pairs whose key contains year larger than 1950
-  are filtered out. Next we change the key from a vector of \texttt{station.id} 
-  and month index to \texttt{station.id} only. 
-  \item[Reduce] 576 of one-row data.frame corresponding to one station are 
-  aggregated to be one data.frame. Concretely all one-row data.frame who share
-  the same \texttt{station.id} are shuffled and transferred to one reducer, and 
-  then R function "rbind" is called in that reducer to combine those one-row 
-  data.frame, which includes (1) \texttt{year}, year of the observation, 
-  (2) \texttt{month}, month of year (January to December), (3) \texttt{tmax}, 
-  the monthly maximum temperature, \texttt{latitude}, \texttt{longitude}, 
-  \texttt{elevation}. We filter out stations who does not have any valid
-  observation in 576 months. So finally there are 7,738 key-value pairs have been
-  generated and save on HDFS. 
+  Key is vector of \texttt{station.id} and month index \texttt{i} of starting date
+  of training data, and value is a data.frame including training data of 270 
+  observations and testing data of the next 36 observations.
+  \item[Output] Totally there are 7,738 multiplies total number of \texttt{group} 
+  key-value pairs. 
+  Key is vector of \texttt{station.id} and \texttt{group}; value is a R data.frame
+  with $36 \times 271 = 9,756$ rows and 9 columns, which are (1) \texttt{year},
+  (2) \texttt{month}, month of year, (3) \texttt{time}, the month index, (4) 
+  \texttt{seasonal}, (5)\texttt{trend}, (6) \texttt{remainder}, (7) \texttt{tmax},
+  (8) \texttt{lag}, prediction lag distance from 1 to 36, and (9) \texttt{rep},
+  the replicates index of STL fitting, values from 1 to 271. 
+  \item[Map] For each input key-value pairs, first we extend 270 training 
+  observations with 36 \texttt{NA}s. And then pass this time series of 306 
+  observations into R function \texttt{stl2} with pre-defined group of STL 
+  parameter setting. Lastly a data.frame with 36 rows and 9 columns is generated
+  as intermediate value, which includes the raw observations of the testing data, 
+  as well as the prediction of \texttt{trend} and \texttt{seasonal} component of 
+  the 36 months.
+  \item[Reduce] Intermediate key-value pairs generated from map step will be saved
+  on HDFS.
 \end{description} 
+
+In the next several section, we detail the experiment set up, visualization for 
+the diagnostic, and the parameter selection based on prediction error.
 
 \subsubsection{Experiment 1,  
 \textmd{$w_s=c(21, 30, 39)$, $w_t=c(231, 313, 451)$, $d_s=1$, $d_t=2$}
 }
 
+In the experiment 1, we vary the span window for seasonal and trend components. 
+After the MapReduce job described previously, we first illustrate the distribution
+of prediction residuals of each station for a given group of parameter setting
+conditional on lag distance. Recall, in section~\ref{sec:a1950.divibyStation} we
+randomly sampled 128 stations based on a kd-tree built on 7,738 stations. So we 
+include these 128 stations in the graph for diagnostic purpose. Notice that there
+are 1,152 ($128 \times 9$) pages of plots if one station is graphed one one page.
+We describe the process of creating these graphs in parallel by using RHIPE in R
+with \texttt{lattice} package.
+
+\begin{description}
+  \item[Input] $7,738 \times 9 = 69,642$ key-value pairs 
+  \item[Output] 9 PDF graph files, each of which is the Normal quantile plots of
+  prediction residual conditional on lag distance for 128 stations for a given
+  group parameter setting.  
+  \item[Map] For each of input key-value pairs, we modify the key to be 
+  \texttt{group} index only, which represent which parameter setting the STL fitting
+  is based on. The value data.frame is added a new column named \texttt{station.id}.
+  \item[Reduce] Intermediate key-value pairs, generated by map function, which 
+  shares the same \texttt{group} index are shuffled and transfered into one reducer,
+  and then are further aggregated into one data.frame by calling \texttt{rbind} 
+  function in R. Then graphing function from \texttt{lattice} R package is utilized
+  to generate PDF graph files based on each final key-value pair. However the 
+  final key-value pairs are not saved on HDFS, but only the PDF files. 
+\end{description} 
+
+The 9 PDF files are then copied from HDFS to the local file system to be visualized
+as in Figure~{\ref*{QQ.error.laggroup}}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/QQ.error.tmax.group.1.pdf}{Link to group 1} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E1/QQ.error.tmax.group.2.pdf}{Link to group 2} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E1/QQ.error.tmax.group.3.pdf}{Link to group 3}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E1/QQ.error.tmax.group.4.pdf}{Link to group 4} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E1/QQ.error.tmax.group.5.pdf}{Link to group 5} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E1/QQ.error.tmax.group.6.pdf}{Link to group 6}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E1/QQ.error.tmax.group.7.pdf}{Link to group 7} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E1/QQ.error.tmax.group.8.pdf}{Link to group 8} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E1/QQ.error.tmax.group.9.pdf}{Link to group 9}
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 1}
+  \label{QQ.error.laggroup}
+\end{center}
+\end{framed}
+
 Each station is plotted on one page, and the order of the stations for a given 
 parameter set up is decided as follow. Based on the normal quantile plot of 
-prediction error for each station, the total amount of deviation, the distribution 
-of prediction error from normal distribution, is calculated over all lag and all 
+prediction error for each station, the total amount of deviation of the distribution 
+of prediction error from normal distribution is calculated over all lag and all 
 parameter set up. Then the stations are ordered from the smallest to the largest 
 in term of deviation.
 
@@ -840,17 +947,127 @@ in term of deviation.
 \textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=c(123, 313, 451)$, $d_s=1$, $d_t=2$}
 }
 
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/QQ.error.tmax.group.1.pdf}{Link to group 1} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E2/QQ.error.tmax.group.2.pdf}{Link to group 2} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E2/QQ.error.tmax.group.3.pdf}{Link to group 3}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E2/QQ.error.tmax.group.4.pdf}{Link to group 4} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E2/QQ.error.tmax.group.5.pdf}{Link to group 5} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E2/QQ.error.tmax.group.6.pdf}{Link to group 6}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E2/QQ.error.tmax.group.7.pdf}{Link to group 7} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E2/QQ.error.tmax.group.8.pdf}{Link to group 8} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E2/QQ.error.tmax.group.9.pdf}{Link to group 9}
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 2}
+  \label{QQ.error.laggroup}
+\end{center}
+\end{framed}
+
 \subsubsection{Experiment 3,  
 \textmd{$w_s=$"periodic", $w_t=c(41, 83, 123, 313, 451)$, $d_s=1$, $d_t=c(1,2)$}
 }
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/QQ.error.tmax.group.1.pdf}{Link to group 1} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E3/QQ.error.tmax.group.2.pdf}{Link to group 2} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E3/QQ.error.tmax.group.3.pdf}{Link to group 3}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E3/QQ.error.tmax.group.4.pdf}{Link to group 4} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E3/QQ.error.tmax.group.5.pdf}{Link to group 5} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E3/QQ.error.tmax.group.6.pdf}{Link to group 6}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E3/QQ.error.tmax.group.7.pdf}{Link to group 7} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E3/QQ.error.tmax.group.8.pdf}{Link to group 8} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E3/QQ.error.tmax.group.9.pdf}{Link to group 9}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E3/QQ.error.tmax.group.10.pdf}{Link to group 10}  
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 3}
+  \label{QQ.error.laggroup}
+\end{center}
+\end{framed}
 
 \subsubsection{Experiment 4,  
 \textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=241$, $d_s=1$, $d_t=c(1,2)$}
 }
 
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E4/QQ.error.tmax.group.1.pdf}{Link to group 1} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E4/QQ.error.tmax.group.2.pdf}{Link to group 2} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E4/QQ.error.tmax.group.3.pdf}{Link to group 3}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E4/QQ.error.tmax.group.4.pdf}{Link to group 4} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E4/QQ.error.tmax.group.5.pdf}{Link to group 5} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E4/QQ.error.tmax.group.6.pdf}{Link to group 6}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E4/QQ.error.tmax.group.7.pdf}{Link to group 7} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E4/QQ.error.tmax.group.8.pdf}{Link to group 8} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E4/QQ.error.tmax.group.9.pdf}{Link to group 9}
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 4}
+  \label{QQ.error.laggroup}
+\end{center}
+\end{framed}
+
 \subsubsection{Experiment 5,  
 \textmd{$w_s=c(11, 21, 31, 47$,"periodic"$)$, $w_t=241$, $d_s=c(1,2)$, $d_t=1$}
 }
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E5/QQ.error.tmax.group.1.pdf}{Link to group 1} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E5/QQ.error.tmax.group.2.pdf}{Link to group 2} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E5/QQ.error.tmax.group.3.pdf}{Link to group 3}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E5/QQ.error.tmax.group.4.pdf}{Link to group 4} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E5/QQ.error.tmax.group.5.pdf}{Link to group 5} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E5/QQ.error.tmax.group.6.pdf}{Link to group 6}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E5/QQ.error.tmax.group.7.pdf}{Link to group 7} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E5/QQ.error.tmax.group.8.pdf}{Link to group 8} 
+  \;\;\;\;\;\;\;\;\;\;
+  \href{../plots/a1950/E5/QQ.error.tmax.group.9.pdf}{Link to group 9}
+\end{center}
+\begin{center}
+  \href{../plots/a1950/E5/QQ.error.tmax.group.10.pdf}{Link to group 10}  
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 5}
+  \label{QQ.error.laggroup}
+\end{center}
+\end{framed}
 
 \section{Modeling: Decomposition of Spatial Temporal Data}
 
