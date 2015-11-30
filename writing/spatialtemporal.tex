@@ -2,10 +2,10 @@
 
 \section{Source of the Data}
 
-Historical records of weather such as monthly precipitation and temperatures from the last
-century are an invaluable database to study changes and variability in climate. These data
-also provide the starting point for understanding and modeling the relationship among climate,
-ecological processes and human activities. 
+Historical records of weather such as monthly precipitation and temperatures from 
+the last century are an invaluable database to study changes and variability in 
+climate. These data also provide the starting point for understanding and modeling 
+the relationship among climate, ecological processes and human activities. 
 
 Because of digitization and rapid development of computer hardware, nowadays
 people are able to store, summarize and analyze larger and more 
@@ -835,13 +835,51 @@ MapReduce job.
   multiple files, and save them on HDFS.
 \end{description} 
 
-Although the database is created on HDFS for the experiments after previous 
-MapReduce job, the parameter set for STL fitting is needed to be chose and passed 
-to each STL fitting. Moreover, we want to find the best parameter set by exploring
-the parameter space. The factors we are going to tun are $w_t$, $w_s$, $d_t$, 
+Next, the parameters for STL fitting is needed to be chose and passed 
+to each STL fitting. Moreover, we want to find the best parameter set based on
+accuracy measurement. The purposes of choosing an accuracy measure of the 
+prediction are to quantify 
+the extent of uncertainty in the forecasting and in turn help selecting the best 
+model based on prediction performance. 
+There are many measurements which all have their strength and weakness. 
+Research indicates that the performances of different methods are related to the
+purpose of forecasting and the specific concerns of the situation using the 
+forecasts. 
+That is why from a theoretical point of view there is no single best method 
+\cite{brockwell2002introduction}.
+
+
+
+$$
+Error = | y_i - \hat y_i |
+$$
+where $y_i$ is the observation at $i$th month, and $\hat y_i$ is prediction value
+which is equal to the summation of seasonal and trend components at $i$th month.
+
+The critiera to judge the different measurements refer to the reliability and
+discrimination of a method. Reliability is defined as the capability of producing 
+consistent results when the methods are applied to different subsamples of the 
+same series. Discrimination is the ability to tell apart better or worse models. 
+Since it is not possible to optimize these criteria at the same time, trade-off 
+should be considered.
+
+Our proposed criteria to measure the performances of various parameter sets are 
+based on the absolute prediction error: E t M = |M t −P t M |. The usual choice: 
+Mean Squared Error is not suitable in this case because it is influenced by the 
+outliers significantly. Our series are unique in that there is fair share of 
+outliers. MSE gives too much sway to the outliers and the entire loss function is
+dominated by the extreme outliers in this dataset. The regular positions in the 
+pattern contribute to the loss function only negligibly. What we want is a robust
+solution. The absolute prediction error does not discriminate against the regular
+values and limits the influence of the extreme outliers, which provides robustness 
+in the assessment of the performance. On the other hand, all of the outliers are 
+on the lower end of the data range. The absolute value of the error makes sure 
+the influence from positive and negative errors are treated equally.
+
+The factors we are going to tun are $w_t$, $w_s$, $d_t$, 
 and $d_s$. Within each factorial experiment, we conduct multiple STL fitting with 
 different parameter set for some given factors, and we define the group index of 
-parameter setting to be variable \texttt{group}. FOr example, in the Experiment 1,
+parameter setting to be variable \texttt{group}. For example, in the Experiment 1,
 the factors we choose is $w_s$ and $w_t$, each of which has three levels. The 
 total number of group of parameter setting is 9.
 
@@ -873,6 +911,12 @@ parameters.
   on HDFS.
 \end{description} 
 
+In our design, we have four parameters in the parameter space: $w_t$, $w_s$, 
+$d_t$ and $d_s$. In
+every experiment, we fix the value of two factors and do a full factorial design
+for anther two to explore and cover the design space. Besides, the number of inner
+iterations and the number of outer iterations are also kept constant.
+
 In the next several section, we detail the experiment set up, visualization for 
 the diagnostic, and the parameter selection based on prediction error.
 
@@ -903,11 +947,12 @@ with \texttt{lattice} package.
   and then are further aggregated into one data.frame by calling \texttt{rbind} 
   function in R. Then graphing function from \texttt{lattice} R package is utilized
   to generate PDF graph files based on each final key-value pair. However the 
-  final key-value pairs are not saved on HDFS, but only the PDF files. 
+  final key-value pairs are not saved on HDFS, but only the PDF files are save on
+  HDFS. 
 \end{description} 
 
 The 9 PDF files are then copied from HDFS to the local file system to be visualized
-as in Figure~{\ref*{QQ.error.laggroup}}
+as in Figure {\ref{QQ.error.laggroup.E1}}
 
 \begin{framed}
 \begin{center}
@@ -930,17 +975,20 @@ as in Figure~{\ref*{QQ.error.laggroup}}
   \href{../plots/a1950/E1/QQ.error.tmax.group.8.pdf}{Link to group 8} 
   \;\;\;\;\;\;\;\;\;\;
   \href{../plots/a1950/E1/QQ.error.tmax.group.9.pdf}{Link to group 9}
-  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 1}
-  \label{QQ.error.laggroup}
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag 
+  for 128 stations with a given group of parameter setting in Experiment 1}
+  \label{QQ.error.laggroup.E1}
 \end{center}
 \end{framed}
 
 Each station is plotted on one page, and the order of the stations for a given 
-parameter set up is decided as follow. Based on the normal quantile plot of 
-prediction error for each station, the total amount of deviation of the distribution 
-of prediction error from normal distribution is calculated over all lag and all 
-parameter set up. Then the stations are ordered from the smallest to the largest 
-in term of deviation.
+group of parameter set up is decided as following: 
+based on the normal quantile plot of prediction error for each station across all 
+36 lag values, the total amount of deviation of the distribution 
+of prediction error from normal distribution is calculated. 
+$$
+$$
+Then the stations are ordered from the smallest to the largest in term of deviation.
 
 
 \subsubsection{Experiment 2,  
@@ -968,7 +1016,8 @@ in term of deviation.
   \href{../plots/a1950/E2/QQ.error.tmax.group.8.pdf}{Link to group 8} 
   \;\;\;\;\;\;\;\;\;\;
   \href{../plots/a1950/E2/QQ.error.tmax.group.9.pdf}{Link to group 9}
-  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 2}
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag 
+  for 128 stations with a given group of parameter setting in Experiment 2}
   \label{QQ.error.laggroup}
 \end{center}
 \end{framed}
@@ -1001,7 +1050,8 @@ in term of deviation.
 \end{center}
 \begin{center}
   \href{../plots/a1950/E3/QQ.error.tmax.group.10.pdf}{Link to group 10}  
-  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 3}
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag 
+  for 128 stations with a given group of parameter setting in Experiment 3}
   \label{QQ.error.laggroup}
 \end{center}
 \end{framed}
@@ -1031,7 +1081,8 @@ in term of deviation.
   \href{../plots/a1950/E4/QQ.error.tmax.group.8.pdf}{Link to group 8} 
   \;\;\;\;\;\;\;\;\;\;
   \href{../plots/a1950/E4/QQ.error.tmax.group.9.pdf}{Link to group 9}
-  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 4}
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag 
+  for 128 stations with a given group of parameter setting in Experiment 4}
   \label{QQ.error.laggroup}
 \end{center}
 \end{framed}
@@ -1064,7 +1115,8 @@ in term of deviation.
 \end{center}
 \begin{center}
   \href{../plots/a1950/E5/QQ.error.tmax.group.10.pdf}{Link to group 10}  
-  \captionof{figure}{The normal quantiles of prediction error conditional on lag for 128 stations with a given group of parameter setting in Experiment 5}
+  \captionof{figure}{The normal quantiles of prediction error conditional on lag 
+  for 128 stations with a given group of parameter setting in Experiment 5}
   \label{QQ.error.laggroup}
 \end{center}
 \end{framed}
