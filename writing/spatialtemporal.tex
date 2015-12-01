@@ -813,7 +813,7 @@ FlatMap function. Specifically, the map function read in one key-value pairs, on
 for each STL prediction fit. Totally, there are $2,096,998$ new key-value pairs 
 saved on HDFS as the database for the experiments.
 
-We detail the procedure of generating experiment database in the following 
+In what follows, we detail the procedure of generating experiment database in a 
 MapReduce job.
 
 \begin{description}
@@ -856,7 +856,7 @@ $$
 where $y_i$ is the observation at $i$th month, and $\hat y_i$ is prediction value
 which is equal to the summation of seasonal and trend components at $i$th month.
 
-The critiera to judge the different measurements refer to the reliability and
+The criteria to judge the different measurements refer to the reliability and
 discrimination of a method. Reliability is defined as the capability of producing 
 consistent results when the methods are applied to different subsamples of the 
 same series. Discrimination is the ability to tell apart better or worse models. 
