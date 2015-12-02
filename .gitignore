@@ -21,7 +21,7 @@ hs_err_pid*
 *.lot
 *.out
 *.toc
-
+*.ps
 # sbt specific
 .cache
 .history

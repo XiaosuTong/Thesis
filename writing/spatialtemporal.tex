@@ -1,4 +1,4 @@
-\chapter[DIVIDE AND RECOMBINED ANALYSIS TO SPATIAL-TEMPROAL \\ DATA]{DIVIDE AND RECOMBINED ANALYSIS TO SPATIAL-TEMPROAL DATA}
+\chapter{Spatial-Temporal Data Analysis with Divide and Recombined}
 
 \section{Source of the Data}
 
@@ -766,77 +766,12 @@ data to predict oncoming 36 months of maximum temperature. Then the prediction
 error is calculated to measure the prediction ability. 
 We want to see how the different parameter setting affect 
 the prediction ability. Concretely, for each station, we use the first 270 
-observations to predict 36 oncoming observations, then move the range window of 
-training dataset one observation ahead, and predict the next 36 observations. 
-There are 576 observations for each station, so we conduct 271 prediction of 36
-observations for each station.
+observations to predict 36 oncoming observations, then move the time window of 
+training dataset one observation ahead, 2nd to 271st observation, and predict the
+next 36 observations. There are 576 observations for each station, so we conduct 
+271 replicates for prediction of 36 observations within each station.
 
-\subsubsection{Generating Database for Experiment}
-
-If we conduct the experiment above in series, we have to run 
-$271 \times 7738 = 2096998$ number of STL fitting for all stations in R, which is 
-extremely computational inefficient. Fortunately, because of using RHIPE
-(R and Hadoop Integrated Programming Environment), we can easily handle this 
-experiment in parallel. Intuitively, we carry out the STL fittings of multiple 
-stations in parallel. Concretely, based on database of division by station, map
-function which executes 271 STL prediction is applied to each of 7,738 station.
-However, this is still computationally heavy for each mapper since all 271 STL 
-fitting have to be sequentially executed in R with either \texttt{for} loop or 
-\texttt{lapply} function. We have to consider other more efficient parallel 
-procedure for the experiment.
-
-There are other two ways to carry out the parallel procedure, which are less 
-heavy with respect to computation of each mapper. One is to create a share
-R object, namely a data.frame, which containing all 576 observations of all 7,738 
-stations, and is saved on HDFS immediately right after the MapReduce job is 
-initialized. The data.frame is order by \texttt{station.id}, \texttt{year}, and
-\texttt{month}. Then in the MapReduce job, we simulate the key of input key-value
-pairs to be sequence of integer from 1 to 2,096,998, each of which represents the
-row index of the first observation of each STL fitting. The corresponding value 
-is the same integer as the key. For instance, if key-value pair is 
-\texttt{(3001,3001)}, it means the corresponding map function applied to this 
-key-value pair will use observations from August 1951 to Jan 1974 (20th observation
-to 289th observation inclusively) to predict the maximum temperature of Feb 1974
-to Jan 1977 for the 12th station.
-
-But this method requires each mapper which is executing map function to load the
-shared R data.frame into memory of the worker on which the mapper is running. So
-if one worker of the MapReduce job is assigned with multiple mappers, that shared
-R object is loaded into memory with multiple copies which is inefficient with
-respect to memory usage. As a result, we consider another way to perform the 
-parallel computation. 
-
-So the database we finally generated is based on 
-by station database of stations after 1950. We split one key-value pairs from by 
-stations database to multiple key-value pairs in map function which we called 
-FlatMap function. Specifically, the map function read in one key-value pairs, one
-for each STL prediction fit. Totally, there are $2,096,998$ new key-value pairs 
-saved on HDFS as the database for the experiments.
-
-In what follows, we detail the procedure of generating experiment database in a 
-MapReduce job.
-
-\begin{description}
-  \item[Input] 7,738 key-value pairs from the division by station database, with 
-  \texttt{station.id} as the key, and R data.frame including 576 observations as
-  the value.
-  \item[Output] experiment database in form of 2,096,998 key-value pairs, with 
-  vector of \texttt{station.id} and month index \texttt{i} of starting date of 
-  training data as the key, and R data.frame containing 271 training data 
-  observations and 36 testing observations as the value.
-  \item[Map] For each input key-value pairs, we create 271 intermediate key-value
-  pairs. We loop over month index \texttt{i} from 1 to 271, which represents the
-  starting month of the training data. The key of intermediate key-value pairs
-  is vector of \texttt{station.id} and \texttt{i}, the value contains 271 
-  training data (starting from \texttt{i}th month) and 36 testing data, which is 
-  a R data.frame with 307 rows and 7 columns.
-  \item[Reduce] Identity reduce function do not do anything to the intermediate 
-  key-value pairs besides evenly distributes all intermediate key-value pairs to 
-  multiple files, and save them on HDFS.
-\end{description} 
-
-Next, the parameters for STL fitting is needed to be chose and passed 
-to each STL fitting. Moreover, we want to find the best parameter set based on
+Moreover, we want to find the best parameter set based on
 accuracy measurement. The purposes of choosing an accuracy measure of the 
 prediction are to quantify 
 the extent of uncertainty in the forecasting and in turn help selecting the best 
@@ -882,6 +817,70 @@ different parameter set for some given factors, and we define the group index of
 parameter setting to be variable \texttt{group}. For example, in the Experiment 1,
 the factors we choose is $w_s$ and $w_t$, each of which has three levels. The 
 total number of group of parameter setting is 9.
+
+\subsubsection{Generating Database for Experiment}
+
+If we conduct the experiment above in series, we have to run 
+$271 \times 7738 = 2096998$ number of STL fitting for all stations in R, which is 
+extremely computational inefficient. Fortunately, because of using RHIPE
+(R and Hadoop Integrated Programming Environment), we can easily handle this 
+experiment in parallel. Intuitively, we carry out the STL fittings of multiple 
+stations in parallel. Concretely, based on database of division by station, map
+function which executes 271 STL prediction is applied to each of 7,738 station.
+However, this is still computationally heavy for each mapper since all 271 STL 
+fitting have to be sequentially executed in R with either \texttt{for} loop or 
+\texttt{lapply} function. We have to consider other more efficient parallel 
+procedure for the experiment.
+
+There are other two ways to carry out the parallel procedure, which are less 
+heavy with respect to computation of each mapper. One is to create a share
+R object, namely a data.frame containing all 576 observations of all 7,738 
+stations, and it is saved on HDFS immediately after the MapReduce job is 
+initialized. The data.frame is order by \texttt{station.id}, \texttt{year}, and
+\texttt{month}. Then in the MapReduce job, we simulate the key of input key-value
+pairs to be sequence of integer from 1 to 2,096,998, each of which represents the
+row index of the first observation of each STL fitting. The corresponding value 
+is the same integer as the key. For instance, if key-value pair is 
+\texttt{(3001,3001)}, it means the corresponding map function applied to this 
+key-value pair will use observations from August 1951 to Jan 1974 (20th observation
+to 289th observation inclusively) to predict the maximum temperature of Feb 1974
+to Jan 1977 for the 12th station.
+
+But this method requires each mapper, which executes map function, to load the
+shared R data.frame into memory of the worker on which the mapper is running. So
+if one worker of the MapReduce job is assigned with multiple mappers, that shared
+R object is loaded into memory with multiple copies which is inefficient with
+respect to memory usage. As a result, we consider another way to perform the 
+parallel computation. 
+
+So the database we finally generated is based on 
+by station database of dataset after 1950. We split one key-value pairs from by 
+stations database to multiple key-value pairs in map function which we called 
+FlatMap function. Specifically, the map function read in one key-value pairs, one
+for each STL prediction fit. Totally, there are $2,096,998$ new key-value pairs 
+saved on HDFS as the database for the experiments.
+
+In what follows, we detail the procedure of generating experiment database in a 
+MapReduce job.
+
+\begin{description}
+  \item[Input] 7,738 key-value pairs from the division by station database, with 
+  \texttt{station.id} as the key, and R data.frame including 576 observations as
+  the value.
+  \item[Output] experiment database in form of 2,096,998 key-value pairs, with 
+  vector of \texttt{station.id} and month index \texttt{i} of starting date of 
+  training data as the key, and R data.frame containing 271 training data 
+  observations and 36 testing observations as the value.
+  \item[Map] For each input key-value pairs, we create 271 intermediate key-value
+  pairs. We loop over month index \texttt{i} from 1 to 271, which represents the
+  starting month of the training data. The key of intermediate key-value pairs
+  is vector of \texttt{station.id} and \texttt{i}, the value contains 271 
+  training data (starting from \texttt{i}th month) and 36 testing data, which is 
+  a R data.frame with 307 rows and 7 columns.
+  \item[Reduce] Identity reduce function do not do anything to the intermediate 
+  key-value pairs besides evenly distributes all intermediate key-value pairs to 
+  multiple files, and save them on HDFS.
+\end{description} 
 
 Next, we demonstrate the MapReduce job reading in above database from HDFS, and 
 then process the STL fitting on each key-value pairs with one group of pre-defined 
@@ -935,7 +934,10 @@ We describe the process of creating these graphs in parallel by using RHIPE in R
 with \texttt{lattice} package.
 
 \begin{description}
-  \item[Input] $7,738 \times 9 = 69,642$ key-value pairs 
+  \item[Input] $7,738 \times 9 = 69,642$ key-value pairs with vector of 
+  \texttt{station.id} and \texttt{group} as the key, and value is a data.frame
+  including the STL+ fitted value of seasonal and trend components of 36 lag 
+  times 271 replicates for a given station given group of parameter setting.
   \item[Output] 9 PDF graph files, each of which is the Normal quantile plots of
   prediction residual conditional on lag distance for 128 stations for a given
   group parameter setting.  

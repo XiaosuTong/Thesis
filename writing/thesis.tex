@@ -34,7 +34,7 @@
 %     http://www.ecn.purdue.edu/~mark/puthesis/#Options
 % for documentclass options.
 % CHANGE NEXT LINE?
-\documentclass[stat,dissertation]{puthesis}
+\documentclass[stat,dissertation,nochapterblankpages]{puthesis}
 
 % Define "align" environment used in demo-mathematics.tex.
 % CHANGE NEXT LINE?
@@ -47,14 +47,23 @@
 % Define "subfigure" environment used in "demo-figure.tex".
 % CHANGE NEXT LINE?
 \usepackage{subfigure}
+
+
+%%%% packages included by Xiaosu
 \usepackage{framed}
 \usepackage{url}
 \usepackage{caption}
 \usepackage{color}
-\usepackage{hyperref}
-\hypersetup{
-  colorlinks=false
-}
+\usepackage[breaklinks]{hyperref}
+\hypersetup{pdfnewwindow}
+% captions
+\usepackage{caption}
+% break url
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-}
+\usepackage{breakurl}
+% continue enumerate
+\usepackage{enumitem}
 
 % Title of thesis (used on cover and in abstract).
 % The title shown must be the full, official title of the thesis.
@@ -192,6 +201,23 @@
 %
 % Put chapter \include commands here.
 %
+\makeatletter
+\def\@chapter[#1]#2{%
+  \ifnum \c@secnumdepth >\m@ne
+    \refstepcounter{chapter}%
+    \typeout{\@chapapp\space\thechapter.}%
+    \addcontentsline{toc}{chapter}{\protect\numberline{\thechapter}\uppercase{#1}}
+  \fi
+  \chaptermark{#1}%
+  \@makechapterhead{#2}
+  \@afterheading
+  \ifthen{\not \boolean{@@inchapters}}
+    {
+      \pagenumbering{arabic}%
+      \@@inchapterstrue
+    }
+}
+\makeatother
 
 % Introductions may precede the first chapters or major divisions of theses.
 % Reference: TM2006, page 31.
@@ -229,7 +255,7 @@
 % Use "\appendix" for one appendix or "\appendices" for more than one
 % appendix.
 % CHANGE NEXT 7 LINES?
-\appendices
+%\appendices
 %\include{demo-citations}
 %\include{demo-figures}
 %\include{demo-mathematics}
