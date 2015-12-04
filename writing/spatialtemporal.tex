@@ -762,20 +762,18 @@ diagnostic purpose.
 \subsection{Experiment of Tunning Parameters of STL}
 
 In the experiment, we are trying to use consecutive 270 observations as training 
-data to predict oncoming 36 months of maximum temperature. Then the prediction 
-error is calculated to measure the prediction ability. 
-We want to see how the different parameter setting affect 
-the prediction ability. Concretely, for each station, we use the first 270 
-observations to predict 36 oncoming observations, then move the time window of 
-training dataset one observation ahead, 2nd to 271st observation, and predict the
-next 36 observations. There are 576 observations for each station, so we conduct 
-271 replicates for prediction of 36 observations within each station.
+data to predict oncoming 36 observations which treated as testing data. Then the 
+loss function between the prediction and the true observation is calculated to 
+measure the prediction ability. Concretely, for 
+each station, we use the first 270 observations to predict 36 oncoming 
+observations (271st to 306th). Then the time window of training dataset is moved 
+one observation ahead (2nd to 271st), and prediction of the next 36 observations 
+is produced. We call one run of prediction of 36 testing data as one replicate. 
+Since there are 576 observations for each station, we conduct 271 replicates for 
+prediction of 36 observations within each station.
 
-Moreover, we want to find the best parameter set based on
-accuracy measurement. The purposes of choosing an accuracy measure of the 
-prediction are to quantify 
-the extent of uncertainty in the forecasting and in turn help selecting the best 
-model based on prediction performance. 
+Moreover, we want to find the best parameter set based on the prediction ability,
+which is accuracy measurement. 
 There are many measurements which all have their strength and weakness. 
 Research indicates that the performances of different methods are related to the
 purpose of forecasting and the specific concerns of the situation using the 
@@ -987,8 +985,9 @@ Each station is plotted on one page, and the order of the stations for a given
 group of parameter set up is decided as following: 
 based on the normal quantile plot of prediction error for each station across all 
 36 lag values, the total amount of deviation of the distribution 
-of prediction error from normal distribution is calculated. 
+of prediction error from normal distribution is calculated as
 $$
+Dev_{ij} = \sum_{l=1}^{36} \sum_{r=1}^{271} ||
 $$
 Then the stations are ordered from the smallest to the largest in term of deviation.
 
