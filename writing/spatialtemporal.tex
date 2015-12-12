@@ -691,9 +691,11 @@ predictor.
 \subsection{Database of Division by Station}
 \label{sec:a1950.divibyStation}
 
-Similar with section~\ref{sec:divibyStation}, we construct a database, from the
-initial database, of division by station for the data after 1950. Next we 
-describe the details about the procedure of creating this station based database.
+After we filled in all missing values, we start our decomposition analysis with 
+time dimension. In order to extract the seasonal and trend components for each 
+observation, we construct the second database, from the initial database, of 
+division by station for the data after 1950. In the following, we describe the 
+details about the procedure of creating this division by station database.
 
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, with one of
@@ -759,9 +761,16 @@ cell in Figure \href{../plots/elev.dist.bycell.pdf}{\ref*{elev.dist.bycell}}
 Later on these 128 stations are used in the section XXX for visualization and 
 diagnostic purpose.
 
-\subsection{Experiment of Tunning Parameters of STL}
+\subsection{Tunning Parameters of \texttt{stlplus}}
 
-In the experiment, we are trying to use consecutive 270 observations as training 
+In order to decompose the trend and seasonal components from each observation, we 
+fit \texttt{stlplus} on the time series of each station independently. However,
+according to the literature of \texttt{stl} and \texttt{stlplus}, there is not 
+any rule of thumb about choosing of smoothing parameters $w_s$, $w_t$, $d_s$, and 
+$d_t$. So a data-driven approach to tun the parameters is considered. 
+
+Concretely, we are trying to use consecutive 270 observations, which is about 
+50\% of the total number of observation for each station, as training 
 data to predict oncoming 36 observations which treated as testing data. Then the 
 loss function between the prediction and the true observation is calculated to 
 measure the prediction ability. Concretely, for 
@@ -772,7 +781,7 @@ is produced. We call one run of prediction of 36 testing data as one replicate.
 Since there are 576 observations for each station, we conduct 271 replicates for 
 prediction of 36 observations within each station.
 
-Moreover, we want to find the best parameter set based on the prediction ability,
+Then, we want to find the best parameter set based on the prediction ability,
 which is accuracy measurement. 
 There are many measurements which all have their strength and weakness. 
 Research indicates that the performances of different methods are related to the
@@ -780,27 +789,23 @@ purpose of forecasting and the specific concerns of the situation using the
 forecasts. 
 That is why from a theoretical point of view there is no single best method 
 \cite{brockwell2002introduction}.
-
-
-
 $$
 Error = | y_i - \hat y_i |
 $$
 where $y_i$ is the observation at $i$th month, and $\hat y_i$ is prediction value
 which is equal to the summation of seasonal and trend components at $i$th month.
 
-The criteria to judge the different measurements refer to the reliability and
+The criteria to judge the different measurements refers to the reliability and
 discrimination of a method. Reliability is defined as the capability of producing 
 consistent results when the methods are applied to different subsamples of the 
 same series. Discrimination is the ability to tell apart better or worse models. 
 Since it is not possible to optimize these criteria at the same time, trade-off 
 should be considered.
 
-Our proposed criteria to measure the performances of various parameter sets are 
-based on the absolute prediction error: E t M = |M t −P t M |. The usual choice: 
+The usual choice: 
 Mean Squared Error is not suitable in this case because it is influenced by the 
 outliers significantly. Our series are unique in that there is fair share of 
-outliers. MSE gives too much sway to the outliers and the entire loss function is
+outliers. MSE gives too much weights to the outliers and the entire loss function is
 dominated by the extreme outliers in this dataset. The regular positions in the 
 pattern contribute to the loss function only negligibly. What we want is a robust
 solution. The absolute prediction error does not discriminate against the regular
@@ -818,7 +823,7 @@ total number of group of parameter setting is 9.
 
 \subsubsection{Generating Database for Experiment}
 
-If we conduct the experiment above in series, we have to run 
+If we conduct the above experiment in series, we have to run 
 $271 \times 7738 = 2096998$ number of STL fitting for all stations in R, which is 
 extremely computational inefficient. Fortunately, because of using RHIPE
 (R and Hadoop Integrated Programming Environment), we can easily handle this 
@@ -983,13 +988,38 @@ as in Figure {\ref{QQ.error.laggroup.E1}}
 
 Each station is plotted on one page, and the order of the stations for a given 
 group of parameter set up is decided as following: 
-based on the normal quantile plot of prediction error for each station across all 
-36 lag values, the total amount of deviation of the distribution 
-of prediction error from normal distribution is calculated as
+based on the normal quantile plot of prediction error for a given station across 
+all 36 lag values, the total amount of deviation of the distribution of prediction 
+error from normal distribution is calculated as
 $$
-Dev_{ij} = \sum_{l=1}^{36} \sum_{r=1}^{271} ||
+Dev = \sum_{i=1}^{36} \sum_{j=1}^{271} |Error_{ij} - Z_{(j-0.5)/271}|^2
 $$
-Then the stations are ordered from the smallest to the largest in term of deviation.
+where $Z_{(j-0.5)/271}$ is the $(j-0.5)/271$ quantiles of unit Normal distribution.
+Then the stations are ordered from the smallest to the largest in term of 
+deviation. Surprisingly, with a given parameter setting of \texttt{stlplus}, the
+prediction error for all stations with different lag are well-approximated by
+unit Normal distribution, which guarantee us to use the summary statistics, mean
+and standard deviation of the prediction error for a given station and a given
+lag to compare the prediction ability of different groups of \texttt{stlplus}
+parameter setting. 
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/tmax.mean.absmeans.error.sw.pdf}{Link to figure}
+  \captionof{figure}{The quantiles of abs error conditional on $w_s$}
+  \label{e1.abserror.sw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/tmax.mean.absmeans.error.tw.pdf}{Link to figure}
+  \captionof{figure}{The quantiles of abs error conditional on $w_t$}
+  \label{e1.abserror.tw}
+\end{center}
+\end{framed}
+
+
 
 
 \subsubsection{Experiment 2,  
