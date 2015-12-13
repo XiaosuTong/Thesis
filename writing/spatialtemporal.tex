@@ -1003,19 +1003,61 @@ and standard deviation of the prediction error for a given station and a given
 lag to compare the prediction ability of different groups of \texttt{stlplus}
 parameter setting. 
 
+As we mentioned previously, we sampled 128 stations from the 7,738 stations for
+the visualization purpose. The location of the 128 stations are shown in 
+Figure \href{../plots/vertices.a1950.pdf}{\ref*{a1950.vertices}}. The index 1
+to 128 is helpful to easily identify the stations. In Figure 
+\href{../plots/vertices.a1950.pdf}{\ref*{a1950.vertices}}. 
+
 \begin{framed}
 \begin{center}
-  \href{../plots/a1950/E1/tmax.mean.absmeans.error.sw.pdf}{Link to figure}
-  \captionof{figure}{The quantiles of abs error conditional on $w_s$}
-  \label{e1.abserror.sw}
+  \href{../plots/a1950/E1/tmax.absmeans.vs.lag.sw.pdf}{Link to figure}
+  \captionof{figure}{The mean of abs error vs. lag conditional on $w_s$}
+  \label{e1.abserrorlag.sw}
 \end{center}
 \end{framed}
 
 \begin{framed}
 \begin{center}
-  \href{../plots/a1950/E1/tmax.mean.absmeans.error.tw.pdf}{Link to figure}
-  \captionof{figure}{The quantiles of abs error conditional on $w_t$}
+  \href{../plots/a1950/E1/tmax.std.vs.lag.sw.pdf}{Link to figure}
+  \captionof{figure}{The standard deviation of error vs. lag conditional on $w_s$}
+  \label{e1.stderrorlag.sw}
+\end{center}
+\end{framed}
+
+In Figure \href{../plots/tmax.absmeans.vs.lag.sw.pdf}{\ref*{e1.abserrorlag.sw}}, 
+the mean of absolute value of prediction error over 271 replicates for a given
+station given lag distance is plotted against lag distance conditional on $w_s$ 
+and superposed on $w_t$ with different color. Each page is for one station. Even
+though 128 stations all come from very different locations, the prediction ability
+of different parameter setting are surprisingly consistent. Within different 
+$w_s$ values, trend window size with 451 always illustrates a lower prediction
+error over 36 lag distance.
+And in Figure \href{../plots/tmax.std.vs.lag.sw.pdf}{\ref*{e1.stderrorlag.sw}},
+the standard deviation of prediction error over 271 replicates for a given 
+station given lag distance is plotted against lag distance conditional on $w_s$
+and superposed on $w_t$. Again, trend window size with 451 returns the lowest
+variance of error collectively. 
+But we notice, the advantage of trend window size 451, with respect to the variance
+and mean of the prediction error, is negligible. 
+
+Similarly, we plot the mean of absolute value of prediction error and standard 
+deviation of prediction error against to lag distance conditional on $w_t$ and
+superposed on $w_s$ as well.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/tmax.absmeans.vs.lag.tw.pdf}{Link to figure}
+  \captionof{figure}{The mean of abs error vs.lag conditional on $w_t$}
   \label{e1.abserror.tw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/tmax.std.vs.lag.tw.pdf}{Link to figure}
+  \captionof{figure}{The standard deviation of error vs. lag conditional on $w_t$}
+  \label{e1.stderror.tw}
 \end{center}
 \end{framed}
 
