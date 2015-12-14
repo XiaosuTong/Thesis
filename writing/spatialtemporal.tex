@@ -1034,7 +1034,8 @@ of different parameter setting are surprisingly consistent. Within different
 $w_s$ values, trend window size with 451 always illustrates a lower prediction
 error over 36 lag distance.
 And in Figure \href{../plots/tmax.std.vs.lag.sw.pdf}{\ref*{e1.stderrorlag.sw}},
-the standard deviation of prediction error over 271 replicates for a given 
+the standard deviation of prediction error multiplies 1.96 over 271 replicates 
+for a given 
 station given lag distance is plotted against lag distance conditional on $w_s$
 and superposed on $w_t$. Again, trend window size with 451 returns the lowest
 variance of error collectively. 
@@ -1042,14 +1043,14 @@ But we notice, the advantage of trend window size 451, with respect to the varia
 and mean of the prediction error, is negligible. 
 
 Similarly, we plot the mean of absolute value of prediction error and standard 
-deviation of prediction error against to lag distance conditional on $w_t$ and
-superposed on $w_s$ as well.
+deviation of prediction error, respectively, against to lag distance conditional 
+on $w_t$ and superposed on $w_s$ as well.
 
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/E1/tmax.absmeans.vs.lag.tw.pdf}{Link to figure}
   \captionof{figure}{The mean of abs error vs.lag conditional on $w_t$}
-  \label{e1.abserror.tw}
+  \label{e1.abserrorlag.tw}
 \end{center}
 \end{framed}
 
@@ -1057,12 +1058,37 @@ superposed on $w_s$ as well.
 \begin{center}
   \href{../plots/a1950/E1/tmax.std.vs.lag.tw.pdf}{Link to figure}
   \captionof{figure}{The standard deviation of error vs. lag conditional on $w_t$}
+  \label{e1.stderrorlag.tw}
+\end{center}
+\end{framed}
+
+It is noticeable that within three different value of $w_t$, seasonal window size
+39 provides the lowest mean and standard deviation of prediction error based on 
+Figure \href{../plots/tmax.absmeans.vs.lag.tw.pdf}{\ref*{e1.abserrorlag.tw}} and 
+Figure \href{../plots/tmax.std.vs.lag.tw.pdf}{\ref*{e1.stderrorlag.tw}}. Moreover,
+three curves with different seasonal windows under given trend window are 
+approximately parallel, and the range of standard deviation and mean of absolute
+value of prediction error over lag distance is negligible comparing to the value
+itself, we summarize the graphs above to make the comparison over different group
+parameter setting more straightforward.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/tmax.mean.absmeans.error.sw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $w_t$}
+  \label{e1.abserror.tw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/tmax.mean.std.error.sw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $w_t$}
   \label{e1.stderror.tw}
 \end{center}
 \end{framed}
 
-
-
+In Figure \href{../plots/tmax.mean.absmeans.error.tw.pdf}{\ref*{e1.stderror.tw}}
 
 \subsubsection{Experiment 2,  
 \textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=c(123, 313, 451)$, $d_s=1$, $d_t=2$}
