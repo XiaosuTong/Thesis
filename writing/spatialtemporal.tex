@@ -956,8 +956,20 @@ with \texttt{lattice} package.
   HDFS. 
 \end{description} 
 
-The 9 PDF files are then copied from HDFS to the local file system to be visualized
-as in Figure {\ref{QQ.error.laggroup.E1}}
+The 9 PDF files are then copied from HDFS to the local file system to be 
+visualized as in Figure {\ref{QQ.error.laggroup.E1}}. The parameter setting for
+each group are
+\\
+group 1: $w_s = 21$, $w_t = 231$;
+group 2: $w_s = 21$, $w_t = 313$;
+group 3: $w_s = 21$, $w_t = 451$;\\
+group 4: $w_s = 30$, $w_t = 231$;
+group 5: $w_s = 30$, $w_t = 313$;
+group 6: $w_s = 30$, $w_t = 451$;\\
+group 7: $w_s = 39$, $w_t = 231$;
+group 8: $w_s = 39$, $w_t = 313$;
+group 9: $w_s = 39$, $w_t = 451$.
+\\
 
 \begin{framed}
 \begin{center}
@@ -1039,8 +1051,8 @@ for a given
 station given lag distance is plotted against lag distance conditional on $w_s$
 and superposed on $w_t$. Again, trend window size with 451 returns the lowest
 variance of error collectively. 
-But we notice, the advantage of trend window size 451, with respect to the variance
-and mean of the prediction error, is negligible. 
+But we notice, the advantage of trend window size 451, with respect to the 
+variance and mean of the prediction error, is negligible. 
 
 Similarly, we plot the mean of absolute value of prediction error and standard 
 deviation of prediction error, respectively, against to lag distance conditional 
@@ -1064,13 +1076,15 @@ on $w_t$ and superposed on $w_s$ as well.
 
 It is noticeable that within three different value of $w_t$, seasonal window size
 39 provides the lowest mean and standard deviation of prediction error based on 
-Figure \href{../plots/tmax.absmeans.vs.lag.tw.pdf}{\ref*{e1.abserrorlag.tw}} and 
-Figure \href{../plots/tmax.std.vs.lag.tw.pdf}{\ref*{e1.stderrorlag.tw}}. Moreover,
-three curves with different seasonal windows under given trend window are 
-approximately parallel, and the range of standard deviation and mean of absolute
-value of prediction error over lag distance is negligible comparing to the value
-itself, we summarize the graphs above to make the comparison over different group
-parameter setting more straightforward.
+Figure 
+\href{../plots/a1950/E1/tmax.absmeans.vs.lag.tw.pdf}{\ref*{e1.abserrorlag.tw}} 
+and Figure 
+\href{../plots/a1950/E1/tmax.std.vs.lag.tw.pdf}{\ref*{e1.stderrorlag.tw}}.
+Moreover, three curves with different seasonal windows under given trend window 
+are approximately parallel, and the range of standard deviation and mean of 
+absolute value of prediction error over lag distance is negligible comparing to 
+the value itself, we summarize the graphs above to make the comparison over 
+different group parameter setting more straightforward.
 
 \begin{framed}
 \begin{center}
@@ -1088,11 +1102,69 @@ parameter setting more straightforward.
 \end{center}
 \end{framed}
 
-In Figure \href{../plots/tmax.mean.absmeans.error.tw.pdf}{\ref*{e1.stderror.tw}}
+In Figure \href{../plots/tmax.mean.absmeans.error.tw.pdf}{\ref*{e1.abserror.tw}}
+and Figure \href{../plots/tmax.mean.std.error.tw.pdf}{\ref*{e1.stderror.tw}}, 
+the mean of absolute prediction error and the mean of standard deviation of 
+prediction error of each station are plotted against the corresponding station
+respectively, conditional on $w_s$ and superposed on $w_t$. Both standard 
+deviation and mean of prediction error illustrates that prediction ability is
+maximized when trend window size is 451. But we also notice that the difference
+between different trend window size with respect to the prediction error is 
+negligible cross all 128 stations. 
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/tmax.mean.absmeans.error.tw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $w_s$}
+  \label{e1.abserror.sw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E1/tmax.mean.std.error.tw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $w_s$}
+  \label{e1.stderror.sw}
+\end{center}
+\end{framed}
+
+Similarly, in 
+Figure \href{../plots/tmax.mean.absmeans.error.tw.pdf}{\ref*{e1.abserror.tw}}
+and Figure \href{../plots/tmax.mean.std.error.tw.pdf}{\ref*{e1.stderror.tw}}, 
+we plot the mean of absolute prediction error and the mean of standard deviation 
+of prediction error of each station against the corresponding station conditional 
+on $w_s$ and superposed on $w_t$. We also notice that even though seasonal window
+size of 39 provides the best prediction ability with different trend window size,
+the advantage is very small. This implies we should also enlarge the seasonal 
+window.  
 
 \subsubsection{Experiment 2,  
-\textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=c(123, 313, 451)$, $d_s=1$, $d_t=2$}
+\textmd{$w_s=c(11, 41, $"periodic"$)$, $w_t=c(123, 241, 451)$, $d_s=1$, $d_t=2$}
 }
+
+In the experiment 2, we still vary the span window for seasonal and trend fitting,
+but with a larger range for seasonal span window. The parameter setting for each 
+group are
+\\
+group 1: $w_s = 11$, $w_t = 123$;
+group 2: $w_s = 11$, $w_t = 241$;
+group 3: $w_s = 11$, $w_t = 451$;\\
+group 4: $w_s = 41$, $w_t = 123$;
+group 5: $w_s = 41$, $w_t = 241$;
+group 6: $w_s = 41$, $w_t = 451$;\\
+group 7: $w_s = "periodic"$, $w_t = 123$;
+group 8: $w_s = "periodic"$, $w_t = 241$;\\
+group 9: $w_s = "periodic"$, $w_t = 451$;
+\\
+We include "periodic" as one 
+of the value for seasonal window. "periodic" means for each sub-series, local 
+weighted regression is conducted with span equal to infinite and degree equal to 
+0. Infinite span window is actually same as global weighted regression with equal 
+weight 1 for all points. And we make the rang of trend window to be more 
+variable than experiment 1.
+Again, we carry out the same MapReduce job as we demonstrated in the experiment
+1 but with different 9 groups of parameter settings to visualize the normal 
+quantiles of prediction error conditional on lag distance for 128 stations.
 
 \begin{framed}
 \begin{center}
@@ -1120,6 +1192,62 @@ In Figure \href{../plots/tmax.mean.absmeans.error.tw.pdf}{\ref*{e1.stderror.tw}}
   \label{QQ.error.laggroup}
 \end{center}
 \end{framed}
+The stations are ordered from the smallest to the largest in term of deviation
+from the unit normal distribution. Still, the prediction error for all 128 
+stations with different lag are well-approximated by unit Normal distribution.
+As a result, we evaluate the prediction ability of each group of parameter setting
+based on the mean of absolute value of prediction error and standard deviation of
+prediction error collectively.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/tmax.absmeans.vs.lag.sw.pdf}{Link to figure}
+  \captionof{figure}{The mean of abs error vs. lag conditional on $w_s$}
+  \label{e2.abserrorlag.sw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/tmax.std.vs.lag.sw.pdf}{Link to figure}
+  \captionof{figure}{The standard deviation of error vs. lag conditional on $w_s$}
+  \label{e2.stderrorlag.sw}
+\end{center}
+\end{framed}
+
+This time, it is trivial to notice that the difference between trend window of 
+123 and the other two value of trend window is significant in all three different 
+values of seasonal window for all stations. But the curves for 313 and 451 of 
+trend window are almost overlapping. These plots imply that the prediction ability
+decrease when trend window is enlarged until a stable level after trend window 
+is around 241.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/tmax.absmeans.vs.lag.tw.pdf}{Link to figure}
+  \captionof{figure}{The mean of abs error vs.lag conditional on $w_t$}
+  \label{e2.abserrorlag.tw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/tmax.std.vs.lag.tw.pdf}{Link to figure}
+  \captionof{figure}{The standard deviation of error vs. lag conditional on $w_t$}
+  \label{e2.stderrorlag.tw}
+\end{center}
+\end{framed}
+
+In Figure 
+\href{../plots/a1950/E2/tmax.absmeans.vs.lag.tw.pdf}{\ref*{e1.abserrorlag.tw}} 
+and Figure 
+\href{../plots/a1950/E2/tmax.std.vs.lag.tw.pdf}{\ref*{e1.stderrorlag.tw}},
+the prediction ability varies apparently between different seasonal span window
+cross three trend windows for all stations. "periodic" seasonal window gives
+the lowest prediction error collectively in all stations. Moreover, we also notice
+that when trend span window is 123, the mean and standard deviation of prediction
+error increasing dramatically when lag distance increasing. This also confirms
+our finding for the trend span window. 
 
 \subsubsection{Experiment 3,  
 \textmd{$w_s=$"periodic", $w_t=c(41, 83, 123, 313, 451)$, $d_s=1$, $d_t=c(1,2)$}
