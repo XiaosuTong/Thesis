@@ -382,7 +382,8 @@ division by station database via RHIPE on a cluster of 11 servers and 242 proces
   which includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, 
   month of year (January to December), (3) \texttt{tmax}, the monthly maximum 
   temperature. The rest of information about the station, \texttt{station.name}, 
-  \texttt{latitude}, \texttt{longitude}, \texttt{elevation}, is save as an attributes associated with the data.frame named \texttt{location}.
+  \texttt{latitude}, \texttt{longitude}, \texttt{elevation}, is save as an 
+  attributes associated with the data.frame named \texttt{location}.
 \end{description}
 
 \subsection{Time Series Analysis of Each Subset}
@@ -646,7 +647,8 @@ latitude and longitude of two points $a$ and $b$, and $\Delta \phi$,
 $\Delta \lambda$ their absolute differences; then $\Delta \sigma$ the central angle 
 between them, is given by:
 $$
-\Delta \sigma_{a,b} = 2 \arcsin \sqrt{ \sin^2 ( \frac{\Delta \phi}{2} ) + \cos \phi_a \cdot \cos \phi_b \cdot \sin^2 ( \frac{\Delta \lambda}{2} )}
+\Delta \sigma_{a,b} = 2 \arcsin \sqrt{ \sin^2 ( \frac{\Delta \phi}{2} ) + \cos 
+\phi_a \cdot \cos \phi_b \cdot \sin^2 ( \frac{\Delta \lambda}{2} )}
 $$ 
 Then the distance $d(a,b)$, i.e. the arc length, for a sphere of radius $r$ is
 $$
@@ -961,13 +963,13 @@ visualized as in Figure {\ref{QQ.error.laggroup.E1}}. The parameter setting for
 each group are
 \\
 group 1: $w_s = 21$, $w_t = 231$;
-group 2: $w_s = 21$, $w_t = 313$;
-group 3: $w_s = 21$, $w_t = 451$;\\
-group 4: $w_s = 30$, $w_t = 231$;
+group 2: $w_s = 30$, $w_t = 231$;
+group 3: $w_s = 39$, $w_t = 231$;\\
+group 4: $w_s = 21$, $w_t = 313$;
 group 5: $w_s = 30$, $w_t = 313$;
-group 6: $w_s = 30$, $w_t = 451$;\\
-group 7: $w_s = 39$, $w_t = 231$;
-group 8: $w_s = 39$, $w_t = 313$;
+group 6: $w_s = 39$, $w_t = 313$;\\
+group 7: $w_s = 21$, $w_t = 451$;
+group 8: $w_s = 30$, $w_t = 451$;
 group 9: $w_s = 39$, $w_t = 451$.
 \\
 
@@ -1147,13 +1149,13 @@ but with a larger range for seasonal span window. The parameter setting for each
 group are
 \\
 group 1: $w_s = 11$, $w_t = 123$;
-group 2: $w_s = 11$, $w_t = 241$;
-group 3: $w_s = 11$, $w_t = 451$;\\
-group 4: $w_s = 41$, $w_t = 123$;
+group 2: $w_s = 41$, $w_t = 123$;\\
+group 3: $w_s = "periodic"$, $w_t = 123$;
+group 4: $w_s = 11$, $w_t = 241$;\\
 group 5: $w_s = 41$, $w_t = 241$;
-group 6: $w_s = 41$, $w_t = 451$;\\
-group 7: $w_s = "periodic"$, $w_t = 123$;
-group 8: $w_s = "periodic"$, $w_t = 241$;\\
+group 6: $w_s = "periodic"$, $w_t = 241$;\\
+group 7: $w_s = 11$, $w_t = 451$;
+group 8: $w_s = 41$, $w_t = 451$;\\
 group 9: $w_s = "periodic"$, $w_t = 451$;
 \\
 We include "periodic" as one 
@@ -1197,7 +1199,13 @@ from the unit normal distribution. Still, the prediction error for all 128
 stations with different lag are well-approximated by unit Normal distribution.
 As a result, we evaluate the prediction ability of each group of parameter setting
 based on the mean of absolute value of prediction error and standard deviation of
-prediction error collectively.
+prediction error collectively. However, there is one thing should be pointed out
+which did not happen in the first experiment.
+With group 1 to group 3 parameter setting, even though the distribution of mean
+of absolute value of prediction error for each lag distance is approximated by
+a unit Normal distribution, the variance of the unit Normal is enlarging when 
+the lag distance becomes further. This implies that the prediction error is more
+unstable when the $w_t$ is relatively small.
 
 \begin{framed}
 \begin{center}
@@ -1249,10 +1257,50 @@ that when trend span window is 123, the mean and standard deviation of predictio
 error increasing dramatically when lag distance increasing. This also confirms
 our finding for the trend span window. 
 
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/tmax.mean.absmeans.error.sw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $w_t$}
+  \label{e2.abserror.tw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/tmax.mean.std.error.sw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $w_t$}
+  \label{e2.stderror.tw}
+\end{center}
+\end{framed}
+
+In Figure 
+\href{../plots/a1950/E2/tmax.mean.absmeans.error.sw.pdf}{\ref*{e2.abserror.tw}} 
+and Figure 
+\href{../plots/a1950/E2/tmax.mean.std.error.sw.pdf}{\ref*{e2.stderror.tw}}, trend
+span window equal to 123 collectively has undoubtedly higher mean of absolute 
+value and standard deviation of the prediction error cross all stations. But there
+is not clearly difference after trend span window larger than 241 with respect
+to prediction error.
+
+
 \subsubsection{Experiment 3,  
 \textmd{$w_s=$"periodic", $w_t=c(41, 83, 123, 313, 451)$, $d_s=1$, $d_t=c(1,2)$}
 }
-
+In the third experiment, we vary the trend span window with 5 different values, 
+from 41 to 451, much wider range than the first tow experiments, and trend
+degree with 2 values, local linear or local quadratic. So totally there are 10
+runs in the experiment.
+\\
+group 1: $w_t = 41$, $d_t = 1$;
+group 2: $w_t = 83$, $d_t = 1$;
+group 3: $w_t = 123$, $d_t = 1$;\\
+group 4: $w_t = 313$, $d_t = 1$;
+group 5: $w_t = 451$, $d_t = 1$;
+group 6: $w_t = 41$, $d_t = 2$;\\
+group 7: $w_t = 83$, $d_t = 2$;
+group 8: $w_t = 123$, $d_t = 2$;
+group 9: $w_t = 313$, $d_t = 2$;\\
+group 10: $w_t = 451$, $d_t = 2$;
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/E3/QQ.error.tmax.group.1.pdf}{Link to group 1} 
@@ -1282,6 +1330,49 @@ our finding for the trend span window.
   \label{QQ.error.laggroup}
 \end{center}
 \end{framed}
+This time we fix the seasonal span window to be "periodic" based on the finding
+in previous experiments. The first batch of graphs are still the normal quantile
+plots of prediction error for each station with different groups of parameter
+settings. We notice that when $d_t$ is quadratic, the group 6 to group 8, which
+$w_d$ is less than 123, the slop of normal quantile plot increases dramatically
+as lag distance becomes farther. This means when we try to apply quadratic 
+polynomial regression in a relatively small local time period, the prediction 
+for longer lag distance turns to be more unreliable.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/tmax.absmeans.vs.lag.td.pdf}{Link to figure}
+  \captionof{figure}{The mean of abs error vs. lag conditional on $d_t$}
+  \label{e3.abserrorlag.td}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/tmax.std.vs.lag.td.pdf}{Link to figure}
+  \captionof{figure}{The standard deviation of error vs. lag conditional on $d_t$}
+  \label{e3.stderrorlag.td}
+\end{center}
+\end{framed}
+
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/tmax.absmeans.vs.lag.tw.pdf}{Link to figure}
+  \captionof{figure}{The mean of abs error vs. lag conditional on $w_t$}
+  \label{e3.abserrorlag.tw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/tmax.std.vs.lag.tw.pdf}{Link to figure}
+  \captionof{figure}{The standard deviation of error vs. lag conditional on $w_t$}
+  \label{e3.stderrorlag.tw}
+\end{center}
+\end{framed}
+
+
 
 \subsubsection{Experiment 4,  
 \textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=241$, $d_s=1$, $d_t=c(1,2)$}
