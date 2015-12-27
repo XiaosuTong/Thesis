@@ -1282,24 +1282,39 @@ value and standard deviation of the prediction error cross all stations. But the
 is not clearly difference after trend span window larger than 241 with respect
 to prediction error.
 
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/tmax.mean.absmeans.error.tw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $s_t$}
+  \label{e2.abserror.sw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E2/tmax.mean.std.error.tw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $s_t$}
+  \label{e2.stderror.sw}
+\end{center}
+\end{framed}
 
 \subsubsection{Experiment 3,  
-\textmd{$w_s=$"periodic", $w_t=c(41, 83, 123, 313, 451)$, $d_s=1$, $d_t=c(1,2)$}
+\textmd{$w_s=$"periodic", $w_t=c(41, 83, 123, 241, 451)$, $d_s=1$, $d_t=c(1,2)$}
 }
 In the third experiment, we vary the trend span window with 5 different values, 
-from 41 to 451, much wider range than the first tow experiments, and trend
+from 41 to 451, much wider range than the first two experiments, and trend
 degree with 2 values, local linear or local quadratic. So totally there are 10
 runs in the experiment.
 \\
 group 1: $w_t = 41$, $d_t = 1$;
 group 2: $w_t = 83$, $d_t = 1$;
 group 3: $w_t = 123$, $d_t = 1$;\\
-group 4: $w_t = 313$, $d_t = 1$;
+group 4: $w_t = 241$, $d_t = 1$;
 group 5: $w_t = 451$, $d_t = 1$;
 group 6: $w_t = 41$, $d_t = 2$;\\
 group 7: $w_t = 83$, $d_t = 2$;
 group 8: $w_t = 123$, $d_t = 2$;
-group 9: $w_t = 313$, $d_t = 2$;\\
+group 9: $w_t = 241$, $d_t = 2$;\\
 group 10: $w_t = 451$, $d_t = 2$;
 \begin{framed}
 \begin{center}
@@ -1355,6 +1370,14 @@ for longer lag distance turns to be more unreliable.
 \end{center}
 \end{framed}
 
+Figure 
+\href{../plots/a1950/E3/tmax.mean.absmeans.vs.lag.td.pdf}{\ref*{e3.abserrorlag.td}} 
+and Figure 
+\href{../plots/a1950/E3/tmax.std.vs.lag.td.pdf}{\ref*{e3.stderrorlag.td}} 
+illustrate that mean of absolute prediction error and standard deviation error
+is minimized and become stable after $w_t$ is larger than 123. Moreover, when
+$d_t$ is equal to 2, small value of $w_t$ makes the prediction error inflated
+when lag distance is large. 
 
 \begin{framed}
 \begin{center}
