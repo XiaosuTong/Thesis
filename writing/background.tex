@@ -8,6 +8,11 @@ later depends heavily on these topics.
 
 \section{Nonparametric Regression}
 
+Nonparametric regression is a form of regression analysis in which the predictor 
+does not take a predetermined form but is constructed according to information
+derived from the data. Nonparametric regression requires larger sample sizes 
+than regression based on parametric models because the data must supply the 
+model structure as well as the model estimates.
 
 \subsection{Local Regression Models}
 
@@ -30,6 +35,15 @@ indicator variables
 \subsection{Computation}
 
 \section{Seasonal Trend Decomposition using Loess (STL)}
+
+The methods and applications in this work deal with seasonal time series
+that have trends that are considered to be deterministic, which typically can be
+explained by knowledge of the nature of the process. For example, consider the
+time series of monthly maximum temperature measured at 8,125 stations all over 
+the United States from 1895 to 1997. There are two apparent trends --- one is a
+long-term increase. Another trend is the seasonal oscillation within each year.
+A major portion of this work deals with methods for modeling time series with
+deterministic seasonal and trend components.
 
 Seasonal trend decomposition using loess (STL) is a method for decomposing a time
 series into seasonal, trend, and remainder components \cite{Cleveland:1990}.
