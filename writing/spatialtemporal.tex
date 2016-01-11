@@ -597,24 +597,24 @@ the following paragraph we describe the generation of such database with details
 \end{description}
 
 
-For each month, it is a spatial regularization of observation of maximum temperature 
-over 7,738 locations. But around 2,000 different stations have missing value in 
-each month. For instance, in Figure 
+For each month, it is a spatial regularization of observation of maximum 
+temperature over 7,738 locations. But around 2,000 different stations have 
+missing value in each month. For instance, in Figure 
 \href{../plots/tmax.a1950.status.pdf}{\ref*{a1950.status}},
-we illustrate the observation status of 7,738 stations for 100 random sampled 
-months.
+we illustrate the observation status of 7,738 stations for all 576 months.
 
 \begin{framed}
 \begin{center}
   \href{../plots/tmax.a1950.status.pdf}
   {Link to figure}
-  \captionof{figure}{The observation status of stations on 100 months}
+  \captionof{figure}{The observation status of stations in each month}
   \label{a1950.status}
 \end{center}
 \end{framed}
 
 
-\subsection{Spatial Analysis without Elevation}
+\subsection{Spatial Imputation of Missing Value without Elevation}
+\label{sec:impute.w/o.elev}
 
 \subsubsection{Distance Calculation of Neighbors}
 
@@ -626,7 +626,13 @@ point $x$. The distance calculation of $d(x_i, x)$ is based on Euclidean distanc
 $$
 d(x_i, x) = \| x - x_i \|_2
 $$
- 
+
+Treating geodetic coordinates as
+planar can induce deceptive anisotropy in the models because
+of the difference in differentials in longitude and latitude (a
+unit increment in degree longitude is not the same length as
+a unit increment in degree latitude except at the equator) \cite{banerjee2005geodetic}.
+
 In the spatial loess fitting, however, the Euclidean distance is apparently not 
 appropriate. A more reasonable and realistic distance definition is the Great-circle 
 distance, which is the shortest distance between two points on the surface of a 
@@ -655,7 +661,7 @@ $$
 d(a,b) = r \Delta \lambda_{a,b}
 $$
 
-\subsection{Spatial Analysis with Elevation}
+\subsection{Spatial Imputation of Missing Value with Elevation}
 
 For each of 576 months after 1950, we 
 
@@ -762,6 +768,55 @@ cell in Figure \href{../plots/elev.dist.bycell.pdf}{\ref*{elev.dist.bycell}}
 
 Later on these 128 stations are used in the section XXX for visualization and 
 diagnostic purpose.
+
+\subsubsection{The number of observation}
+
+As we discussed in section~\ref{sec:impute.w/o.elev}, because of consecutive 
+missing value over time for a given station, we have to impute missing values 
+based on their spatial neighbors in a given month. Here we provide visualization
+evidence about the hight rate of missing value in each station.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/a1950.obs.station.pdf}{Link to figure}
+  \captionof{figure}{The quantiles of number of observation in one station}
+  \label{quant.obs}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/a1950.obsrate.station.pdf}{Link to figure}
+  \captionof{figure}{The quantiles of rate of valid observation number in one station}
+  \label{quant.obsrate}
+\end{center}
+\end{framed}
+
+In Figure \href{../plots/a1950/a1950.obs.station.pdf}{\ref*{quant.obs}}, the 
+number of observation for each station, in log base 2, is plotted against to 
+corresponding f-value. Only less than 20 percent of stations do not have missing
+value during that 576 months. Meanwhile, about 30 percent of stations have only
+256 or less observations in total. It is about 40 percent of total number of 
+observations for a station based on the Figure 
+\href{../plots/a1950/a1950.obsrate.station.pdf}{\ref*{quant.obsrate}}, in which 
+the rate of valid observation of each station is drawn against to corresponding 
+f-value.
+
+If the missing values of each station are sparse only, we still can handle them 
+by \texttt{stlplus}. However, as shown in Figure 
+\href{../plots/a1950/a1950.consecutive.miss.station.pdf}{\ref*{quant.consecutivemiss}},
+more than 20 percent of stations have maximum length of consecutive missing value 
+larger than 16, which is more than a year. 
+
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/a1950.consecutive.miss.station.pdf}{Link to figure}
+  \captionof{figure}{The quantiles of maximum length of consecutive missing value}
+  \label{quant.consecutivemiss}
+\end{center}
+\end{framed}
+
 
 \subsection{Tunning Parameters of \texttt{stlplus}}
 
@@ -1092,7 +1147,7 @@ different group parameter setting more straightforward.
 \begin{center}
   \href{../plots/a1950/E1/tmax.mean.absmeans.error.sw.pdf}{Link to figure}
   \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $w_t$}
-  \label{e1.abserror.tw}
+  \label{e1.abserror.sw}
 \end{center}
 \end{framed}
 
@@ -1100,12 +1155,12 @@ different group parameter setting more straightforward.
 \begin{center}
   \href{../plots/a1950/E1/tmax.mean.std.error.sw.pdf}{Link to figure}
   \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $w_t$}
-  \label{e1.stderror.tw}
+  \label{e1.stderror.sw}
 \end{center}
 \end{framed}
 
-In Figure \href{../plots/tmax.mean.absmeans.error.tw.pdf}{\ref*{e1.abserror.tw}}
-and Figure \href{../plots/tmax.mean.std.error.tw.pdf}{\ref*{e1.stderror.tw}}, 
+In Figure \href{../plots/tmax.mean.absmeans.error.tw.pdf}{\ref*{e1.abserror.sw}}
+and Figure \href{../plots/tmax.mean.std.error.tw.pdf}{\ref*{e1.stderror.sw}}, 
 the mean of absolute prediction error and the mean of standard deviation of 
 prediction error of each station are plotted against the corresponding station
 respectively, conditional on $w_s$ and superposed on $w_t$. Both standard 
@@ -1118,7 +1173,7 @@ negligible cross all 128 stations.
 \begin{center}
   \href{../plots/a1950/E1/tmax.mean.absmeans.error.tw.pdf}{Link to figure}
   \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $w_s$}
-  \label{e1.abserror.sw}
+  \label{e1.abserror.tw}
 \end{center}
 \end{framed}
 
@@ -1126,7 +1181,7 @@ negligible cross all 128 stations.
 \begin{center}
   \href{../plots/a1950/E1/tmax.mean.std.error.tw.pdf}{Link to figure}
   \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $w_s$}
-  \label{e1.stderror.sw}
+  \label{e1.stderror.tw}
 \end{center}
 \end{framed}
 
@@ -1141,7 +1196,7 @@ the advantage is very small. This implies we should also enlarge the seasonal
 window.  
 
 \subsubsection{Experiment 2,  
-\textmd{$w_s=c(11, 41, $"periodic"$)$, $w_t=c(123, 241, 451)$, $d_s=1$, $d_t=2$}
+\textmd{$w_s=c(11, 41, $"periodic"$)$, $w_t=c(123, 241, 451)$, $d_t=2$}
 }
 
 In the experiment 2, we still vary the span window for seasonal and trend fitting,
@@ -1261,7 +1316,7 @@ our finding for the trend span window.
 \begin{center}
   \href{../plots/a1950/E2/tmax.mean.absmeans.error.sw.pdf}{Link to figure}
   \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $w_t$}
-  \label{e2.abserror.tw}
+  \label{e2.abserror.sw}
 \end{center}
 \end{framed}
 
@@ -1269,7 +1324,7 @@ our finding for the trend span window.
 \begin{center}
   \href{../plots/a1950/E2/tmax.mean.std.error.sw.pdf}{Link to figure}
   \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $w_t$}
-  \label{e2.stderror.tw}
+  \label{e2.stderror.sw}
 \end{center}
 \end{framed}
 
@@ -1286,7 +1341,7 @@ to prediction error.
 \begin{center}
   \href{../plots/a1950/E2/tmax.mean.absmeans.error.tw.pdf}{Link to figure}
   \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $s_t$}
-  \label{e2.abserror.sw}
+  \label{e2.abserror.tw}
 \end{center}
 \end{framed}
 
@@ -1294,7 +1349,7 @@ to prediction error.
 \begin{center}
   \href{../plots/a1950/E2/tmax.mean.std.error.tw.pdf}{Link to figure}
   \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $s_t$}
-  \label{e2.stderror.sw}
+  \label{e2.stderror.tw}
 \end{center}
 \end{framed}
 
@@ -1370,12 +1425,15 @@ for longer lag distance turns to be more unreliable.
 \end{center}
 \end{framed}
 
+Mean of absolute prediction error and standard deviation error are plotted 
+against lag distance conditional on $d_t$ and superposed on $w_t$ in the
 Figure 
-\href{../plots/a1950/E3/tmax.mean.absmeans.vs.lag.td.pdf}{\ref*{e3.abserrorlag.td}} 
+\href{../plots/a1950/E3/tmax.absmeans.vs.lag.td.pdf}{\ref*{e3.abserrorlag.td}} 
 and Figure 
-\href{../plots/a1950/E3/tmax.std.vs.lag.td.pdf}{\ref*{e3.stderrorlag.td}} 
-illustrate that mean of absolute prediction error and standard deviation error
-is minimized and become stable after $w_t$ is larger than 123. Moreover, when
+\href{../plots/a1950/E3/tmax.std.vs.lag.td.pdf}{\ref*{e3.stderrorlag.td}}. 
+It is shown that mean of absolute prediction error and standard deviation of
+prediction error
+are minimized and become stable after $w_t$ is larger than 123. Moreover, when
 $d_t$ is equal to 2, small value of $w_t$ makes the prediction error inflated
 when lag distance is large. 
 
@@ -1395,12 +1453,116 @@ when lag distance is large.
 \end{center}
 \end{framed}
 
+Figure 
+\href{../plots/a1950/E3/tmax.absmeans.vs.lag.tw.pdf}{\ref*{e3.abserrorlag.tw}} 
+and Figure 
+\href{../plots/a1950/E3/tmax.std.vs.lag.tw.pdf}{\ref*{e3.stderrorlag.tw}} 
+illustrate the mean of absolute prediction error and standard deviation of 
+prediction error against lag distance conditional on $w_t$ and superposed on 
+$d_t$ for each of 128 stations. It is noticeable that prediction error inflates
+dramatically as lag distance goes up when the $w_t$ is 41 and $d_t$ is 1.
+As $w_t$ is larger than 123. there is not significant difference between the 
+local linear or quadratic fit for trend component.
 
+We summarize the results in the third experiment by the dotplot of overall mean 
+of absolute prediction error and mean of standard deviation of prediction error
+against station conditional on $w_t$ ($d_t$) and superposed on $d_t$ ($w_t$). As
+dedicated in Figure
+\href{../plots/a1950/E3/tmax.mean.absmeans.error.td.pdf}{\ref*{e3.abserror.td}} 
+and Figure 
+\href{../plots/a1950/E3/tmax.mean.std.error.td.pdf}{\ref*{e3.stderror.td}}, 
+conditional on $d_t$ value, the prediction error is minimized at $w_t$ of value 
+241 collectively. 
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/tmax.mean.absmeans.error.td.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $w_t$}
+  \label{e3.abserror.td}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/tmax.mean.std.error.td.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $w_t$}
+  \label{e3.stderror.td}
+\end{center}
+\end{framed}
+
+Figure 
+\href{../plots/a1950/E3/tmax.mean.absmeans.error.tw.pdf}{\ref*{e3.abserror.tw}} 
+and Figure 
+\href{../plots/a1950/E3/tmax.mean.std.error.tw.pdf}{\ref*{e3.stderror.tw}}
+demonstrate that local linear fit for trend component always provide the lowest
+prediction error, especially for small value of $w_t$.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/tmax.mean.absmeans.error.tw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $s_t$}
+  \label{e3.abserror.tw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E3/tmax.mean.std.error.tw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $s_t$}
+  \label{e3.stderror.tw}
+\end{center}
+\end{framed}
+
+
+
+%\subsubsection{Experiment 4,  
+%\textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=241$, $d_s=1$, $d_t=c(1,2)$}
+%}
+%\begin{framed}
+%\begin{center}
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.1.pdf}{Link to group 1} 
+%  \;\;\;\;\;\;\;\;\;\;
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.2.pdf}{Link to group 2} 
+%  \;\;\;\;\;\;\;\;\;\;
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.3.pdf}{Link to group 3}
+%\end{center}
+%\begin{center}
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.4.pdf}{Link to group 4} 
+%  \;\;\;\;\;\;\;\;\;\;
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.5.pdf}{Link to group 5} 
+%  \;\;\;\;\;\;\;\;\;\;
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.6.pdf}{Link to group 6}
+%\end{center}
+%\begin{center}
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.7.pdf}{Link to group 7} 
+%  \;\;\;\;\;\;\;\;\;\;
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.8.pdf}{Link to group 8} 
+%  \;\;\;\;\;\;\;\;\;\;
+%  \href{../plots/a1950/E4/QQ.error.tmax.group.9.pdf}{Link to group 9}
+%  \captionof{figure}{The normal quantiles of prediction error conditional on lag 
+%  for 128 stations with a given group of parameter setting in Experiment 4}
+%  \label{QQ.error.laggroup}
+%\end{center}
+%\end{framed}
 
 \subsubsection{Experiment 4,  
-\textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=241$, $d_s=1$, $d_t=c(1,2)$}
+\textmd{$w_s=c(11, 21, 31, 47$,"periodic"$)$, $w_t=241$, $d_s=c(1,2)$, $d_t=1$}
 }
-
+In the fourth experiment, we vary the span window and polynomial degree for 
+seasonal component $w_s$ and $d_t$, and fix the parameter for the trend 
+component based on the result of previous experiment, which $w_d = 241$ and 
+$d_t = 1$. Totally there are 9 runs in the experiment, since there is only one 
+run for $w_s$ is "periodic".
+\\
+group 1: $w_s = 11$, $d_s = 1$;
+group 2: $w_s = 21$, $d_s = 1$;
+group 3: $w_s = 31$, $d_s = 1$;\\
+group 4: $w_s = 47$, $d_s = 1$;
+group 5: $w_s = "periodic"$, $d_s = 1$;\\
+group 6: $w_s = 11$, $d_s = 2$;
+group 7: $w_s = 21$, $d_s = 2$;
+group 8: $w_s = 31$, $d_s = 2$;\\
+group 9: $w_s = 47$, $d_s = 2$;
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/E4/QQ.error.tmax.group.1.pdf}{Link to group 1} 
@@ -1422,43 +1584,88 @@ when lag distance is large.
   \href{../plots/a1950/E4/QQ.error.tmax.group.8.pdf}{Link to group 8} 
   \;\;\;\;\;\;\;\;\;\;
   \href{../plots/a1950/E4/QQ.error.tmax.group.9.pdf}{Link to group 9}
+\end{center}
+\begin{center}
   \captionof{figure}{The normal quantiles of prediction error conditional on lag 
   for 128 stations with a given group of parameter setting in Experiment 4}
   \label{QQ.error.laggroup}
 \end{center}
 \end{framed}
 
-\subsubsection{Experiment 5,  
-\textmd{$w_s=c(11, 21, 31, 47$,"periodic"$)$, $w_t=241$, $d_s=c(1,2)$, $d_t=1$}
-}
+Collectively, the prediction error is well approximated by an unit Normal
+distribution for given lag distance of each station with a given group of
+parameter setting. However, in group 4, which $w_s$ is 11 and $d_s$ is 2, the 
+variance of the prediction error for lag distance farther than 12 becomes larger
+than that for shorter lag distance. Prediction is more unstable for longer lag
+distance under this group pf parameter setting. Similar situation can also be
+found in group 7 parameter setting, which is also has relatively small $w_s$ but
+quadratic local fit for the seasonal component.
 
 \begin{framed}
 \begin{center}
-  \href{../plots/a1950/E5/QQ.error.tmax.group.1.pdf}{Link to group 1} 
-  \;\;\;\;\;\;\;\;\;\;
-  \href{../plots/a1950/E5/QQ.error.tmax.group.2.pdf}{Link to group 2} 
-  \;\;\;\;\;\;\;\;\;\;
-  \href{../plots/a1950/E5/QQ.error.tmax.group.3.pdf}{Link to group 3}
+  \href{../plots/a1950/E4/tmax.absmeans.vs.lag.sw.pdf}{Link to figure}
+  \captionof{figure}{The mean of abs error vs. lag conditional on $w_s$}
+  \label{e4.abserrorlag.sw}
 \end{center}
+\end{framed}
+
+\begin{framed}
 \begin{center}
-  \href{../plots/a1950/E5/QQ.error.tmax.group.4.pdf}{Link to group 4} 
-  \;\;\;\;\;\;\;\;\;\;
-  \href{../plots/a1950/E5/QQ.error.tmax.group.5.pdf}{Link to group 5} 
-  \;\;\;\;\;\;\;\;\;\;
-  \href{../plots/a1950/E5/QQ.error.tmax.group.6.pdf}{Link to group 6}
+  \href{../plots/a1950/E4/tmax.std.vs.lag.sw.pdf}{Link to figure}
+  \captionof{figure}{The standard deviation of error vs. lag conditional on $w_s$}
+  \label{e4.stderrorlag.sw}
 \end{center}
+\end{framed}
+
+Whatever!
+
+\begin{framed}
 \begin{center}
-  \href{../plots/a1950/E5/QQ.error.tmax.group.7.pdf}{Link to group 7} 
-  \;\;\;\;\;\;\;\;\;\;
-  \href{../plots/a1950/E5/QQ.error.tmax.group.8.pdf}{Link to group 8} 
-  \;\;\;\;\;\;\;\;\;\;
-  \href{../plots/a1950/E5/QQ.error.tmax.group.9.pdf}{Link to group 9}
+  \href{../plots/a1950/E4/tmax.absmeans.vs.lag.sd.pdf}{Link to figure}
+  \captionof{figure}{The mean of abs error vs. lag conditional on $d_s$}
+  \label{e4.abserrorlag.sd}
 \end{center}
+\end{framed}
+
+\begin{framed}
 \begin{center}
-  \href{../plots/a1950/E5/QQ.error.tmax.group.10.pdf}{Link to group 10}  
-  \captionof{figure}{The normal quantiles of prediction error conditional on lag 
-  for 128 stations with a given group of parameter setting in Experiment 5}
-  \label{QQ.error.laggroup}
+  \href{../plots/a1950/E4/tmax.std.vs.lag.sd.pdf}{Link to figure}
+  \captionof{figure}{The standard deviation of error vs. lag conditional on $d_s$}
+  \label{e4.stderrorlag.sd}
+\end{center}
+\end{framed}
+
+
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E4/tmax.mean.absmeans.error.sw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $w_s$}
+  \label{e4.abserror.sw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E4/tmax.mean.std.error.sw.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $w_s$}
+  \label{e4.stderror.sw}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E4/tmax.mean.absmeans.error.sd.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of abs error vs. station conditional on $d_s$}
+  \label{e4.abserror.sd}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/E4/tmax.mean.std.error.sd.pdf}{Link to figure}
+  \captionof{figure}{The dotplot of mean of standard deviation of error vs.station conditional on $d_s$}
+  \label{e4.stderror.sd}
 \end{center}
 \end{framed}
 
