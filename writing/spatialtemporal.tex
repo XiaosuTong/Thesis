@@ -253,7 +253,7 @@ the $\log_2(8125)$, which is the number of observation when there is no missing
 value in that given month. The number of observation increased gradually from Jan
 1895 to Jan 1915. But then there was a dramatically jump in 1931. The valid
 observation number arose from 1,619 on Dec 1930 to 2,953 on Jan 1931. After Jan 
-1950, the count of observation stayed around $5,800$, which is 71.3\% of all
+1950, the count of observation stayed around $5,000$, which is 65\% of all
 stations. 
 
 \begin{framed}
@@ -612,11 +612,7 @@ we illustrate the observation status of 7,738 stations for all 576 months.
 \end{center}
 \end{framed}
 
-
-\subsection{Spatial Imputation of Missing Value without Elevation}
-\label{sec:impute.w/o.elev}
-
-\subsubsection{Distance Calculation of Neighbors}
+\subsection{Distance Calculation of Neighbors}
 
 As we mentioned in section~\ref{sec:loess}, Loess method calculates the weights 
 $\omega_i(x)$
@@ -660,6 +656,154 @@ Then the distance $d(a,b)$, i.e. the arc length, for a sphere of radius $r$ is
 $$
 d(a,b) = r \Delta \lambda_{a,b}
 $$
+
+\subsection{Spatial Imputation of Missing Value without Elevation}
+\label{sec:impute.w/o.elev}
+
+As the distance function is well defined, based on which we start the imputation 
+of missing value by spatial loess against to longitude and latitude. Concretely,
+the missing value in each month is imputed by its neighbors using locally weighted
+regression against to longitude and latitude of each location. Moreover, imputation
+in each month are carried out independently in parallel using database of division
+by month as input, and generate a new by month division with missing value imputed.
+
+Next we illustrate the MapReduce job which proceed the imputation in parallel.
+\begin{description}
+  \item[Input] 576 key-value pairs of by month division. Key is a vector of
+  \texttt{year} and \texttt{month}; value is a data.frame object with 7,738 
+  number of rows, each of which is observation for one station.
+  \item[Output] 576 key-value pairs. Key is same as input, and value is still
+  a data.frame but with missing value been imputed. 
+  \item[Map]For every input key-value pair, we carry out the spatial loess 
+  imputation at every location with missing value in that month. 
+  \item[Reduce] Reduce is not needed in this MapReduce job.
+\end{description}
+
+In the Map step, the spatial loess imputation is proceeded by a new R package 
+named \texttt{Spaloess}. This package is wrote based on the \texttt{loess} function
+in the base R. The original LOESS implementation in R, available by \texttt{loess},
+is just a wrapper around the C and FORTRAN code. This implementation only allows
+for Euclidean distance when calculated the weights for neighbors. Also it does
+not predict missing values in the data. The main function in the \texttt{Spaloess} 
+package is \texttt{spaloess}, which has following added new feature compared with 
+\texttt{loess}:
+\begin{itemize}
+  \item allow two different type of distance calculation: Euclidean distance or
+  Great-circle distance. Of course, if Great-circle distance is chosen, the 
+  predictor variables must be longitude and latitude, or elevation.
+  \item can handle and predict the NA in the input data, controlled by a logic
+  argument.
+\end{itemize}
+
+The parameters needed for the spatial loess are span, which control the percent
+of neighbors used in the regression, and degree controls the polynomial degree of
+the regression. 
+After the previous MapReduce job, there is a data.frame as value of key-value 
+pairs including the original maximum temperature observation as well as the 
+imputed value of all stations for each month. In the next section, we demonstrate
+the spatial imputation with different parameters, and assess the imputation by
+visualization method.
+
+Then we carry out another MapReduce job to generate visual graph in parallel. 
+However the visualization methods are typically applied to each subset in a 
+sample of subsets, the sampled 128 stations, because there are too many of them 
+to look at plots of all \cite{Hafen:2013}.
+Overall, there are two types of visual graph to assess the spatial imputation. The
+first type is generating visual display for each year. Visualization of twelve
+months in a given year is plotted on one page with twelve panels. The layout of
+panels maybe different depends on the visualization itself. For this type of 
+
+Next we illustrate the MapReduce job which proceed the first type of visual graph
+in parallel.
+
+\begin{description}
+  \item[Input] 576 key-value pairs of by month division. Key is a vector of
+  \texttt{year} and \texttt{month}; value is a data.frame object with 7,738 
+  number of rows, which includes original observation of maximum temperature
+  and the imputed value. Also the residual of imputation for each station is 
+  calculated.
+  \item[Output] 48 key-value pairs. Key is \texttt{year}, and value is a serialized
+  trellis object for a given year created by \texttt{serialize} function.
+  \item[Map]For every input key-value pair, the key is changed from a vector of 
+  \texttt{year} and \texttt{month} to \texttt{year} only. The value is kept the
+  same as input.
+  \item[Reduce] Intermediate key-value pairs who share the same \texttt{year} are
+  shuffled and send to one reduce, and then twelve data.frame are row bind 
+  together accumulatively. A predefined plotting engine function defined based on 
+  functions in \texttt{lattice} package is passed into each reducer and apply to 
+  the accumulated data.frame, which generates a \texttt{trellis} object for each 
+  year. In the end, \texttt{serialize} function is applied to the trellis object 
+  and saved on HDFS.
+\end{description}
+
+As we will see later in Figure 
+\href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResidcenter.bytime.pdf}
+{\ref*{nonelev.0.05.Residcenter.bytime}} which belongs to the first type of 
+visualization, \texttt{trellis} object of each year is generated on one page in 
+the Reduce step by calling a specific visualization function in \texttt{lattice} 
+package, for example, \texttt{xyplot} or \texttt{qqmath}.
+
+The Second type of visualization is to assess the imputation for each of 576 month
+on one page. Specifically, a serialized \texttt{trellis} object is created for 
+each month. We illustrate this in the next MapReduce job.
+
+\begin{description}
+  \item[Input] 576 key-value pairs of by month division. Key is a vector of
+  \texttt{year} and \texttt{month}; value is a data.frame object with 7,738 
+  number of rows, which includes original observation of maximum temperature
+  and the imputed value. Also the residual of imputation for each station is 
+  calculated.
+  \item[Output] 576 key-value pairs. Key is same as input, and value is a serialized
+  trellis object created by \texttt{serialize} function.
+  \item[Map]For every input key-value pair, a predefined plotting engine function
+  defined based on functions in \texttt{lattice} package is passed into and apply 
+  to the value, which generate a \texttt{trellis} object for each key-value pair. 
+  Then \texttt{serialize} function is applied to the trellis object in order to 
+  save it as the value of intermediate key-value pairs.
+  \item[Reduce] Reduce is not needed in this MapReduce job. Intermediate key-value
+  pairs are directly save to HDFS.
+\end{description}
+
+\subsubsection{First run: span = 0.05 and degree = 2}
+
+In the first run, we specify the span of spatial loess to be 0.05, which means
+for each missing value, it will be imputed by using 5 percent of valid observation
+in its neighborhood. And the polynomial degree of spatial loess fit is set to be
+quadratic.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResidcenter.bytime.pdf}
+  {Link to figure}
+  \captionof{figure}
+  {The normal quantiles between 0.015 and 0.985 of residual of spatial imputation}
+  \label{nonelev.0.05.Residcenter.bytime}
+\end{center}
+\end{framed}
+
+For each month, there are around 5,000 imputation residuals. 971 quantiles of the
+imputation residuals are plotted against to their corresponding unit Normal 
+quantiles.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
+  {Link to figure}
+  \captionof{figure}
+  {The residual of spatial imputation against to latitude conditional on longitude}
+  \label{nonelev.0.05.Residvslat.lon}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lon.lat.pdf}
+  {Link to figure}
+  \captionof{figure}
+  {The residual of spatial imputation against to longitude conditional on latitude}
+  \label{nonelev.0.05.Residvslon.lat}
+\end{center}
+\end{framed}
 
 \subsection{Spatial Imputation of Missing Value with Elevation}
 
@@ -808,7 +952,6 @@ by \texttt{stlplus}. However, as shown in Figure
 more than 20 percent of stations have maximum length of consecutive missing value 
 larger than 16, which is more than a year. 
 
-
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/a1950.consecutive.miss.station.pdf}{Link to figure}
@@ -816,7 +959,6 @@ larger than 16, which is more than a year.
   \label{quant.consecutivemiss}
 \end{center}
 \end{framed}
-
 
 \subsection{Tunning Parameters of \texttt{stlplus}}
 
