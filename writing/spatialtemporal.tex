@@ -764,7 +764,7 @@ each month. We illustrate this in the next MapReduce job.
   pairs are directly save to HDFS.
 \end{description}
 
-\subsubsection{First run: span = 0.05 and degree = 2}
+\subsubsection{span = 0.05 and degree = 2}
 
 In the first run, we specify the span of spatial loess to be 0.05, which means
 for each missing value, it will be imputed by using 5 percent of valid observation
@@ -787,7 +787,24 @@ unit Normal quantiles in Figure
 \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResidcenter.bytime.pdf}
 {\ref*{nonelev.0.05.Residcenter.bytime}}. Notice that the range of the residual
 for each month is from -5 to 5 collectively, and it has longer tail compared with
-unit Normal distribution.  
+unit Normal distribution. Besides the Normal quantile plot, another type of 
+diagnostic plot to assess the imputation of missing value is the scatter plot of
+imputation residual against to one of the predictor variables conditional on the
+other, specifically longitude and latitude, which will be shown in the following. 
+As in Figure
+\href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
+{\ref*{nonelev.0.05.Residvslat.lon}}, when longitude is being conditional on, it
+is equally cut into categorical variable with 20 intervals. Then imputation 
+residual is plotted against to latitude in each interval of longitude in each of
+20 panels. Also a loess smoothing curve, with span is equal to 0.25 and degree is
+equal to 1, is added to help us assess the overall trend of the residuals. The 
+loess smoothing curve is collectively around the horizontal reference line at zero
+over all month. However, it is noticeable that most of large negative residuals are
+regularly show up in the first five panels over all months. The first five panels
+are for the longitude from -124.7 to -110.9 degree. Recall that this region is
+the mountain region of the United States where the elevation is various dramatically.
+
+
 
 \begin{framed}
 \begin{center}
@@ -808,6 +825,10 @@ unit Normal distribution.
   \label{nonelev.0.05.Residvslon.lat}
 \end{center}
 \end{framed}
+
+Overall, we need to consider a new imputation model which includes elevation as
+one of the predictor variables, also shrink the span value to illuminate the 
+bias in the imputation.
 
 \subsection{Spatial Imputation of Missing Value with Elevation}
 
