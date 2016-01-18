@@ -790,7 +790,7 @@ for each month is from -5 to 5 collectively, and it has longer tail compared wit
 unit Normal distribution. Besides the Normal quantile plot, another type of 
 diagnostic plot to assess the imputation of missing value is the scatter plot of
 imputation residual against to one of the predictor variables conditional on the
-other, specifically longitude and latitude, which will be shown in the following. 
+other one, specifically longitude and latitude, which will be shown in the following. 
 As in Figure
 \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
 {\ref*{nonelev.0.05.Residvslat.lon}}, when longitude is being conditional on, it
@@ -802,9 +802,13 @@ loess smoothing curve is collectively around the horizontal reference line at ze
 over all month. However, it is noticeable that most of large negative residuals are
 regularly show up in the first five panels over all months. The first five panels
 are for the longitude from -124.7 to -110.9 degree. Recall that this region is
-the mountain region of the United States where the elevation is various dramatically.
-
-
+the Rocky Mountains where the elevation is various dramatically.
+Moreover, there is an outlier with relatively large negative residual consistently 
+in the panel with largest longitude. The corresponding location of this outlier
+is station \texttt{275639} with elevation 1909 meters, longitude -71.30 degree
+and altitude 44.27 degree. An extremely important fact with respect to this
+station is that it is the only station with elevation above 1200 meters among
+643 stations in its neighborhood in the northeastern corner of the United States. 
 
 \begin{framed}
 \begin{center}
@@ -816,6 +820,15 @@ the mountain region of the United States where the elevation is various dramatic
 \end{center}
 \end{framed}
 
+Same information can be found in Figure 
+\href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lon.lat.pdf}
+{\ref*{nonelev.0.05.Residvslon.lat}} as well. Variation of the residual is wider
+in the west side of United State compared with east side cross all the 20 different
+levels of latitude degree. Again the station \texttt{275639} with elevation 1909 
+meters can be found in the 17th panel of latitude. Another group of outliers can 
+be found in the 6th panel of latitude, which is in the region of 35.5 to 36.5 degree, 
+around longitude -82 degree, which is the region of Appalachian Mountains.
+
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lon.lat.pdf}
@@ -826,13 +839,20 @@ the mountain region of the United States where the elevation is various dramatic
 \end{center}
 \end{framed}
 
-Overall, we need to consider a new imputation model which includes elevation as
+Intuitively, we want to illuminate the amount of bias in the imputation. We have 
+to sacrifice the variation in the bias-variance trade-off of the local regression
+method. Meanwhile, elevation is another potential critical predictor variable to
+impute the maximum temperature based on the diagnostic plots above.
+Consequently, we need to consider a new imputation model which includes elevation as
 one of the predictor variables, also shrink the span value to illuminate the 
 bias in the imputation.
 
 \subsection{Spatial Imputation of Missing Value with Elevation}
 
-For each of 576 months after 1950, we 
+As we mentioned previously, elevation is considered to be included in the local
+regression model. However, more thought should be given to the distance calculation
+when elevation is added into the model.
+
 
 \subsubsection{Conditionally Parametric Model}
 
@@ -864,6 +884,9 @@ for the fit at $(\mu, \nu)$ is the same as the quadratic polynomial that is fitt
 locally for the fit at $(\mu+t, \nu)$, whatever the value of $t$. So for the fixed 
 value of $\nu$, the surface is exactly this quadratic as a function of the first 
 predictor.
+
+\subsubsection{span=0.015, degree=2}
+
 
 \subsection{Database of Division by Station}
 \label{sec:a1950.divibyStation}
