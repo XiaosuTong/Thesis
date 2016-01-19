@@ -849,16 +849,27 @@ bias in the imputation.
 
 \subsection{Spatial Imputation of Missing Value with Elevation}
 
-As we mentioned previously, elevation is considered to be included in the local
-regression model. However, more thought should be given to the distance calculation
-when elevation is added into the model.
-
+As we mentioned previously, elevation should be considered to be included in the 
+local regression model. However, more thoughts should be given to the distance 
+calculation when elevation is added into the model. If we simply add elevation
+in the local regression model directly, the calculation of weights of neighbors
+needs modification based on the three-dimension predictor space. However, the 
+definition of distance in this three-dimension space is not trivial, since the
+temperature is not isotropic in elevation direction and in the surface. As a 
+result, Euclidean distance in three-dimension space is not appropriate for this
+situation. Meanwhile, it is more intuitively to assume that the neighborhood or
+distance to neighbors are defined only based on longitude and latitude, as the
+weights introduced in Geographically Weighted Regression \cite{fotheringhamGWR}.
+In the next subsection, we will describe a way to include elevation variable as
+conditional parameter into the local regression model.
 
 \subsubsection{Conditionally Parametric Model}
 
-A nonparametric surface is conditionally
-parametric if we can divide the factors up into two disjoint subsets
-A and B with the following property: given the values of the factors in A,
+The conditionally parametric fit, introduced in \cite{cleveland1992local}, provides
+a generalization of the semi-parametric model, without the complexity of a full
+local fit.
+A nonparametric surface is conditionally parametric if we can divide the factors 
+up into two disjoint subsets A and B with the following property: given the values of the factors in A,
 the surface is a member of a parametric class as a function of the the factors
 in B. We say that the surface is conditionally parametric in A.
 It makes sense to specify a regression surface to be conditionally parametric
@@ -887,6 +898,37 @@ predictor.
 
 \subsubsection{span=0.015, degree=2}
 
+we specify the span of spatial loess to be 0.015, 
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResidcenter.bytime.pdf}
+  {Link to figure}
+  \captionof{figure}
+  {The normal quantiles between 0.015 and 0.985 of residual of spatial imputation}
+  \label{nonelev.0.05.Residcenter.bytime}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lat.lon.pdf}
+  {Link to figure}
+  \captionof{figure}
+  {The residual of spatial imputation against to latitude conditional on longitude}
+  \label{nonelev.0.05.Residvslat.lon}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lon.lat.pdf}
+  {Link to figure}
+  \captionof{figure}
+  {The residual of spatial imputation against to longitude conditional on latitude}
+  \label{nonelev.0.05.Residvslon.lat}
+\end{center}
+\end{framed}
 
 \subsection{Database of Division by Station}
 \label{sec:a1950.divibyStation}
