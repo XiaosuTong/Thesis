@@ -867,11 +867,13 @@ conditional parameter into the local regression model.
 
 The conditionally parametric fit, introduced in \cite{cleveland1992local}, provides
 a generalization of the semi-parametric model, without the complexity of a full
-local fit.
-A nonparametric surface is conditionally parametric if we can divide the factors 
-up into two disjoint subsets A and B with the following property: given the values of the factors in A,
-the surface is a member of a parametric class as a function of the the factors
-in B. We say that the surface is conditionally parametric in A.
+local fit. By definition, We are trying to fit a nonparametric surface of maximum 
+temperature based on longitude, latitude, and elevation, which are three predictor
+variables. A nonparametric surface is conditionally parametric if we can divide
+the predictor variables up into two disjoint subsets \texttt{A} and \texttt{B} 
+with the following property: given the values of the variables in \texttt{A},
+the surface is a member of a parametric class as a function of the the variables
+in \texttt{B}. We say that the surface is conditionally parametric in \texttt{A}.
 It makes sense to specify a regression surface to be conditionally parametric
 in one or more variables if exploration of the data or a priori information
 suggests that the underlying pattern of the data is globally a very smooth
@@ -896,9 +898,44 @@ locally for the fit at $(\mu+t, \nu)$, whatever the value of $t$. So for the fix
 value of $\nu$, the surface is exactly this quadratic as a function of the first 
 predictor.
 
+A growing list of practical applications has shown that conditionally parametric
+fits add structure in a way that is quite useful in practice 
+\cite{cleveland1991computational} and \cite{hastie1990generalized}. This is to be
+expected because there is a good argument for why we would expect conditionally
+parametric surfaces to frequently provide a good fit. If a surface has, instead
+of no effect, a very limited effect due to these factors compared to other factors,
+it is reasonable to expect that the effect would be nearly linear or quadratic
+in these factors given the others. One way to argue for this is to think of Taylor
+series approximations. Consider the maximum temperature surface as a function 
+over all imaginable values of C and E. Suppose it is very complex function of both
+C and E with many peaks and valleys. Taylor series arguments make it clear that
+C can be varied by a sufficiently small amount in an experiment so that the 
+surface is well approximated by a function that is constant in C given E. If the
+domain of variation of C is enlarged, the next approximation is a linear function
+of C given E, and then quadratic. This argument carries with it a corollary; we 
+would expect that, overall, the influence of the variables in which the surface
+is conditionally parametric would be less than the influence of the other 
+variables. 
+
+
 \subsubsection{span=0.015, degree=2}
 
-we specify the span of spatial loess to be 0.015, 
+Based on the result we found in the previous subsection, we modify the span of 
+spatial imputation to be 0.015, which means about 75 locations in the neighborhood
+of the target location will be used for local weighted regression fit if there 
+are roughly 5,000 locations in total. The degree for longitude and latitude 
+variables are kept as quadratic, and the degree for conditional parameter 
+elevation is also specified as quadratic. We demonstrate and assess the imputation
+result for this fit in the following diagnostic graph.
+
+Similarly, the quantiles between 0.015 and 0.095 of imputation residual is plotted 
+against to the corresponding quantiles from a unit Normal distribution in Figure
+\href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResidcenter.bytime.pdf}
+{\ref*{elev2.0.015.Residcenter.bytime}}. As we can notice, even though the 
+distribution of residual still has a longer tail than unit Normal distribution,
+the range of it for each month is about from -2 to 2 collectively, which is about 
+60 percent less of the range of residual in the previous imputation model. Also
+the longer tail issue becomes less severe than previous one.
 
 \begin{framed}
 \begin{center}
@@ -906,7 +943,7 @@ we specify the span of spatial loess to be 0.015,
   {Link to figure}
   \captionof{figure}
   {The normal quantiles between 0.015 and 0.985 of residual of spatial imputation}
-  \label{nonelev.0.05.Residcenter.bytime}
+  \label{elev2.0.015.Residcenter.bytime}
 \end{center}
 \end{framed}
 
