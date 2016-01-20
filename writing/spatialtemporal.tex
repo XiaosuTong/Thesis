@@ -454,7 +454,8 @@ component plus trend component are drawn with magenta curve.
 
 Clearly, no matter where the station is, the fitted values (seasonal+trend) are 
 very close to the true values, and also they capture the seasonal pattern in the 
-raw data. Next, we carry out the diagnostic for each components based on visualization.
+raw data. Next, we carry out the diagnostic for each components based on 
+visualization.
 
 \textbf{Trend Components}
 
@@ -946,17 +947,36 @@ the longer tail issue becomes less severe than previous one.
 \end{center}
 \end{framed}
 
-The next diagnostic plots are about the residual against to one of the predictor
-variables to see if there is any 
+Next, we generate the diagnostic plots about the residual against to one of the 
+predictor variables to detect any pattern left in the residual with respect to
+the predictors. As shown in Figure
+\href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lat.lon.pdf}
+{\ref*{elev.0.015.Residvslat.lon}}, imputation residual is drawn against to 
+latitude conditional on longitude. Again, longitude is equally cut into 20 
+intervals, and a loess smoothing curve with span equal to 0.25 and degree 1 is
+added, which is approximately a flat horizontal line around 0. Furthermore, compared 
+with Figure 
+\href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
+{\ref*{nonelev.0.05.Residvslat.lon}}, which does not include elevation as a
+conditional parameter, the outlier issue in the first five panels are not as 
+severe as it in Figure 
+\href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
+{\ref*{nonelev.0.05.Residvslat.lon}}, or even disappeared in some of months.
+Besides that, the station \texttt{275639} with elevation 1909 meters, longitude 
+-71.30 degree and altitude 44.27 degree in the last panel is not an outlier anymore.
+
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lat.lon.pdf}
   {Link to figure}
   \captionof{figure}
   {The residual of spatial imputation against to latitude conditional on longitude}
-  \label{nonelev.0.05.Residvslat.lon}
+  \label{elev.0.015.Residvslat.lon}
 \end{center}
 \end{framed}
+
+Then, We switch longitude and latitude, and plot the residuals against to longitude
+conditional on 20 intervals of latitude.
 
 \begin{framed}
 \begin{center}
@@ -964,9 +984,14 @@ variables to see if there is any
   {Link to figure}
   \captionof{figure}
   {The residual of spatial imputation against to longitude conditional on latitude}
-  \label{nonelev.0.05.Residvslon.lat}
+  \label{elev.0.015.Residvslon.lat}
 \end{center}
 \end{framed}
+
+Of course, we are not trying to perfectly capture the spatial variation in the
+maximum temperature within the imputation. It is only to fill in the missing 
+values
+
 
 \subsection{Database of Division by Station}
 \label{sec:a1950.divibyStation}
