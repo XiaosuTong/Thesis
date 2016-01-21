@@ -1880,14 +1880,15 @@ quadratic local fit for the seasonal component.
 Then the mean of the absolute value of prediction error over each value of lag
 distance for each station is plotted against to the lag distance on each page as
 in Figure \href{../plots/a1950/E4/tmax.absmeans.vs.lag.sw.pdf}
-{\ref*{e4.abserrorlag.sw}}. Clearly, with smaller value of s.window there is 
-difference of MAPE between the lag distance within a year and further lag distance.
-Moreover, this difference is amplified when s.degree is equal to 2. For example, 
+{\ref*{e4.abserrorlag.sw}}. Clearly, with smaller value of s.window the MAPE 
+consistently is much smaller with shorter lag distance within a year than it with
+further lag distance. Moreover, this difference is amplified when s.degree is 
+equal to 2. For example, 
 in the first panel on the left hand side of each page, the MAPE increases 
 drastically from the first year to the second year and then the third year when
 s.degree is 2. And when the s.window is raised to a higher value, the MAPE 
 becomes more stable over the value of lag distance until it is minimized when 
-s.window is periodic.
+s.window is \texttt{periodic}.
 
 \begin{framed}
 \begin{center}
@@ -1897,6 +1898,16 @@ s.window is periodic.
 \end{center}
 \end{framed}
 
+Same phenomena can be found in the Figure 
+\href{../plots/a1950/E4/tmax.std.vs.lag.sw.pdf}{\ref*{e4.stderrorlag.sw}}, which 
+the standard deviation of prediction error multiplied by 1.96 is plotted against
+to the value of lag distance. s.window of \texttt{periodic} gives the 
+lowest and most stable standard deviation over all different setting of s.window
+and s.degree over all 128 stations collectively. If we switch the conditional 
+variable from s.window to s.degree, it is undoubted the \texttt{periodic} seasonal
+component will be the best choice with respect to the prediction error. As shown
+in Figure 
+
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/E4/tmax.std.vs.lag.sw.pdf}{Link to figure}
@@ -1905,7 +1916,6 @@ s.window is periodic.
 \end{center}
 \end{framed}
 
-Whatever!
 
 \begin{framed}
 \begin{center}
