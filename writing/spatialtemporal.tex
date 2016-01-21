@@ -828,7 +828,7 @@ in the west side of United State compared with east side cross all the 20 differ
 levels of latitude degree. Again the station \texttt{275639} with elevation 1909 
 meters can be found in the 17th panel of latitude. Another group of outliers can 
 be found in the 6th panel of latitude, which is in the region of 35.5 to 36.5 degree, 
-around longitude -82 degree, which is the region of Appalachian Mountains.
+around longitude -82 degree. It is the region of Appalachian Mountains.
 
 \begin{framed}
 \begin{center}
@@ -976,7 +976,14 @@ Besides that, the station \texttt{275639} with elevation 1909 meters, longitude
 \end{framed}
 
 Then, We switch longitude and latitude, and plot the residuals against to longitude
-conditional on 20 intervals of latitude.
+conditional on 20 intervals of latitude. Still most of the outliers existed in 
+the previous imputation in section~\ref{sec:impute.w/o.elev} are vanished across
+all panels in Figure
+\href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lon.lat.pdf}
+{\ref*{elev.0.015.Residvslon.lat}}. Same for the outliers in the region of 
+Appalachian Mountains. Consequently, we keep the result of current fitting, span 
+equal to 0.015 and degree equal to 2, to only impute the missing values in the 
+original dataset.
 
 \begin{framed}
 \begin{center}
@@ -990,7 +997,8 @@ conditional on 20 intervals of latitude.
 
 Of course, we are not trying to perfectly capture the spatial variation in the
 maximum temperature within the imputation. It is only to fill in the missing 
-values
+values and solve the consecutive missing value issue, which will be a rigorous 
+problem in \texttt{stlplus} fit in the next section.
 
 
 \subsection{Database of Division by Station}
@@ -1053,7 +1061,12 @@ illustrate which cell the station comes from.
 \end{framed}
 
 We also graph the quantile plot of the log base 2 of elevation of stations in each
-cell in Figure \href{../plots/elev.dist.bycell.pdf}{\ref*{elev.dist.bycell}}
+cell in Figure \href{../plots/elev.dist.bycell.pdf}{\ref*{elev.dist.bycell}}. 
+The elevation in majority of the 128 cells varies in a very limited range. However, 
+some of cells, such as cells 3, 4, 6, 9, 17, 18, in which stations are 
+concentrated in the area of west coast of the United State, the distribution of 
+elevation has a much more expanded range than that in the area of center United 
+States. 
 
 \begin{framed}
 \begin{center}
@@ -1063,7 +1076,7 @@ cell in Figure \href{../plots/elev.dist.bycell.pdf}{\ref*{elev.dist.bycell}}
 \end{center}
 \end{framed}
 
-Later on these 128 stations are used in the section XXX for visualization and 
+Later on, these 128 stations are used in the section XXX for visualization and 
 diagnostic purpose.
 
 \subsubsection{The number of observation}
@@ -1808,38 +1821,6 @@ prediction error, especially for small value of $w_t$.
 \end{center}
 \end{framed}
 
-
-
-%\subsubsection{Experiment 4,  
-%\textmd{$w_s=c(21, 41, $"periodic"$)$, $w_t=241$, $d_s=1$, $d_t=c(1,2)$}
-%}
-%\begin{framed}
-%\begin{center}
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.1.pdf}{Link to group 1} 
-%  \;\;\;\;\;\;\;\;\;\;
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.2.pdf}{Link to group 2} 
-%  \;\;\;\;\;\;\;\;\;\;
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.3.pdf}{Link to group 3}
-%\end{center}
-%\begin{center}
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.4.pdf}{Link to group 4} 
-%  \;\;\;\;\;\;\;\;\;\;
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.5.pdf}{Link to group 5} 
-%  \;\;\;\;\;\;\;\;\;\;
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.6.pdf}{Link to group 6}
-%\end{center}
-%\begin{center}
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.7.pdf}{Link to group 7} 
-%  \;\;\;\;\;\;\;\;\;\;
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.8.pdf}{Link to group 8} 
-%  \;\;\;\;\;\;\;\;\;\;
-%  \href{../plots/a1950/E4/QQ.error.tmax.group.9.pdf}{Link to group 9}
-%  \captionof{figure}{The normal quantiles of prediction error conditional on lag 
-%  for 128 stations with a given group of parameter setting in Experiment 4}
-%  \label{QQ.error.laggroup}
-%\end{center}
-%\end{framed}
-
 \subsubsection{Experiment 4,  
 \textmd{$w_s=c(11, 21, 31, 47$,"periodic"$)$, $w_t=241$, $d_s=c(1,2)$, $d_t=1$}
 }
@@ -1895,6 +1876,18 @@ than that for shorter lag distance. Prediction is more unstable for longer lag
 distance under this group pf parameter setting. Similar situation can also be
 found in group 7 parameter setting, which is also has relatively small $w_s$ but
 quadratic local fit for the seasonal component.
+
+Then the mean of the absolute value of prediction error over each value of lag
+distance for each station is plotted against to the lag distance on each page as
+in Figure \href{../plots/a1950/E4/tmax.absmeans.vs.lag.sw.pdf}
+{\ref*{e4.abserrorlag.sw}}. Clearly, with smaller value of s.window there is 
+difference of MAPE between the lag distance within a year and further lag distance.
+Moreover, this difference is amplified when s.degree is equal to 2. For example, 
+in the first panel on the left hand side of each page, the MAPE increases 
+drastically from the first year to the second year and then the third year when
+s.degree is 2. And when the s.window is raised to a higher value, the MAPE 
+becomes more stable over the value of lag distance until it is minimized when 
+s.window is periodic.
 
 \begin{framed}
 \begin{center}
