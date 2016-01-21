@@ -1903,10 +1903,7 @@ Same phenomena can be found in the Figure
 the standard deviation of prediction error multiplied by 1.96 is plotted against
 to the value of lag distance. s.window of \texttt{periodic} gives the 
 lowest and most stable standard deviation over all different setting of s.window
-and s.degree over all 128 stations collectively. If we switch the conditional 
-variable from s.window to s.degree, it is undoubted the \texttt{periodic} seasonal
-component will be the best choice with respect to the prediction error. As shown
-in Figure 
+and s.degree over all 128 stations collectively. 
 
 \begin{framed}
 \begin{center}
@@ -1916,6 +1913,18 @@ in Figure
 \end{center}
 \end{framed}
 
+If we switch the conditional 
+variable from s.window to s.degree, it is undoubted the \texttt{periodic} seasonal
+component will be the best choice with respect to the prediction error. As shown
+in Figure \href{../plots/a1950/E4/tmax.absmeans.vs.lag.sd.pdf}
+{\ref*{e4.abserrorlag.sd}} and Figure 
+\href{../plots/a1950/E4/tmax.std.vs.lag.sd.pdf}{\ref*{e4.stderrorlag.sd}}, there
+is a dramatically difference between the \texttt{periodic} setting and smaller 
+value of s.window for both MAPE and SDPE. Meanwhile, MAPE and SDPE from small 
+value of s.window does not increased smoothly over the lag distance. There 
+surely is a jump every 12 months of lag distance. So the prediction is not stable
+over longer lag distance with smaller value of s.window compared with 
+\texttt{periodic} seasonal component.
 
 \begin{framed}
 \begin{center}
@@ -1933,7 +1942,14 @@ in Figure
 \end{center}
 \end{framed}
 
-
+Finally, we summarize the prediction error for each group of parameter setting
+by the overall mean of absolute value of prediction error and the overall mean
+of standard deviation of prediction error multiplied 1.96. In the Figure 
+\href{../plots/a1950/E4/tmax.mean.absmeans.error.sw.pdf}{\ref*{e4.abserror.sw}}
+and Figure \href{../plots/a1950/E4/tmax.mean.std.error.sw.pdf}
+{\ref*{e4.stderror.sw}}, The overall MAPE and MSDPE respectively are plotted 
+against to the corresponding station in order conditional on s.window and 
+superposed on s.degree.
 
 \begin{framed}
 \begin{center}
@@ -1966,6 +1982,9 @@ in Figure
   \label{e4.stderror.sd}
 \end{center}
 \end{framed}
+
+In summary, we varied the s.window, s.degree, t.window, and t.degree four factors
+to find the best prediction stlplus model with respect to the prediction error.
 
 \section{Modeling: Decomposition of Spatial Temporal Data}
 
