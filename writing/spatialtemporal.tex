@@ -1949,7 +1949,10 @@ of standard deviation of prediction error multiplied 1.96. In the Figure
 and Figure \href{../plots/a1950/E4/tmax.mean.std.error.sw.pdf}
 {\ref*{e4.stderror.sw}}, The overall MAPE and MSDPE respectively are plotted 
 against to the corresponding station in order conditional on s.window and 
-superposed on s.degree.
+superposed on s.degree. Apparently, within a given value of s.window, local linear
+fit consistently provides a lower value of overall MAPE and MSDPE over all 128 
+stations. And the superiority of local linear fit is maximized when s.window is
+11.
 
 \begin{framed}
 \begin{center}
@@ -1966,6 +1969,15 @@ superposed on s.degree.
   \label{e4.stderror.sw}
 \end{center}
 \end{framed}
+
+Similar conclusion can be also made if we switch the conditional variable from
+s.window to s.degree, and overall MAPE and MSDPE is plotted against to 
+corresponding station superposed on s.window, as in Figure 
+\href{../plots/a1950/E4/tmax.mean.std.error.sw.pdf}{\ref*{e4.abserror.sd}} and 
+Figure \href{../plots/a1950/E4/tmax.mean.std.error.sd.pdf}{\ref*{e4.stderror.sd}}.
+\texttt{periodic} seasonal component overcome other value of s.window in both
+local linear and quadratic fit.
+
 
 \begin{framed}
 \begin{center}
@@ -1985,6 +1997,28 @@ superposed on s.degree.
 
 In summary, we varied the s.window, s.degree, t.window, and t.degree four factors
 to find the best prediction stlplus model with respect to the prediction error.
+
+\subsection{Spatial Decomposition}
+
+As we introduced in section XXX, \texttt{stlplus} is a very powerful procedure
+which can capture the seasonal and overall trend in the time series. In the 
+previous section, we carried out \texttt{stlplus} fit with same parameters in
+parallel over all 7,738 stations, and results are very promised. Meanwhile, the
+results are save as division by station on the HDFS as key-value pairs after
+the \texttt{stlplus} fit. The model we are proposing is an additive model for 
+maximum temperature with spatial and temporal components. 
+$$
+Y_{ml} = S_{ml} + T_{ml} + G_{ml} + R_{ml}
+$$
+where $Y_{ml}$ is the maximum temperature observation at month m, location l. 
+$S_{ml}$ and $T_{ml}$ are the seasonal component and trend component fitted by
+\texttt{stlplus} with t.window equal to 241, t.degree equal to 1, and s.window
+is \texttt{periodic}, and $G_{ml}$ is the geographic component at month m, 
+location l. $R_{ml}$ is the residual. 
+
+Before we start the spatial fit in each month parallelly, the a new division by
+month which is key-value pairs including $S_{ml}$, $T_{ml}$, and \texttt{stlplus} 
+remainder in the value, and month index as key.
 
 \section{Modeling: Decomposition of Spatial Temporal Data}
 
