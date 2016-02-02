@@ -454,7 +454,7 @@ component plus trend component are drawn with magenta curve.
 
 Clearly, no matter where the station is, the fitted values (seasonal+trend) are 
 very close to the true values, and also they capture the seasonal pattern in the 
-raw data. Next, we carry out the diagnostic for each components based on 
+raw data. Next, we carry out the diagnostics for each components based on 
 visualization.
 
 \textbf{Trend Components}
@@ -477,9 +477,9 @@ behavior across all stations.
 
 \textbf{Seasonal Components}
 
-The diagnostic plot for seasonal component is shown in Figure 
+The diagnostics plot for seasonal component is shown in Figure 
 \href{../plots/100stations/first_run/sea+remaind.month.100stations.tmax.pdf}
-{\ref*{firstrun.searemaind.100stations}}, named seasonal-diagnostic plots, which
+{\ref*{firstrun.searemaind.100stations}}, named seasonal-diagnostics plots, which
 helps us decide how much of the variation in the data other than trend component
 should go into the seasonal component and how much into the remainder.
 
@@ -789,7 +789,7 @@ unit Normal quantiles in Figure
 {\ref*{nonelev.0.05.Residcenter.bytime}}. Notice that the range of the residual
 for each month is from -5 to 5 collectively, and it has longer tail compared with
 unit Normal distribution. Besides the Normal quantile plot, another type of 
-diagnostic plot to assess the imputation of missing value is the scatter plot of
+diagnostics plot to assess the imputation of missing value is the scatter plot of
 imputation residual against to one of the predictor variables conditional on the
 other one, specifically longitude and latitude, which will be shown in the following. 
 As in Figure
@@ -843,7 +843,7 @@ around longitude -82 degree. It is the region of Appalachian Mountains.
 Intuitively, we want to illuminate the amount of bias in the imputation. We have 
 to sacrifice the variation in the bias-variance trade-off of the local regression
 method. Meanwhile, elevation is another potential critical predictor variable to
-impute the maximum temperature based on the diagnostic plots above.
+impute the maximum temperature based on the diagnostics plots above.
 Consequently, we need to consider a new imputation model which includes elevation as
 one of the predictor variables, also shrink the span value to illuminate the 
 bias in the imputation.
@@ -862,7 +862,7 @@ situation. Meanwhile, it is more intuitively to assume that the neighborhood or
 distance to neighbors are defined only based on longitude and latitude, as the
 weights introduced in Geographically Weighted Regression \cite{fotheringhamGWR}.
 In the next subsection, we will describe a way to include elevation variable as
-conditional parameter into the local regression model.
+a global parameter into the local regression model.
 
 \subsubsection{Conditionally Parametric Model}
 
@@ -926,7 +926,7 @@ of the target location will be used for local weighted regression fit if there
 are roughly 5,000 locations in total. The degree for longitude and latitude 
 variables are kept as quadratic, and the degree for conditional parameter 
 elevation is also specified as quadratic. We demonstrate and assess the imputation
-result for this fit in the following diagnostic graph.
+result for this fit in the following diagnostics graph.
 
 Similarly, the quantiles between 0.015 and 0.095 of imputation residual is plotted 
 against to the corresponding quantiles from a unit Normal distribution in Figure
@@ -947,7 +947,7 @@ the longer tail issue becomes less severe than previous one.
 \end{center}
 \end{framed}
 
-Next, we generate the diagnostic plots about the residual against to one of the 
+Next, we generate the diagnostics plots about the residual against to one of the 
 predictor variables to detect any pattern left in the residual with respect to
 the predictors. As shown in Figure
 \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lat.lon.pdf}
@@ -1085,7 +1085,7 @@ States.
 \end{framed}
 
 Later on, these 128 stations are used in the section XXX for visualization and 
-diagnostic purpose.
+diagnostics purpose.
 
 \subsubsection{The number of observation}
 
@@ -1135,6 +1135,7 @@ larger than 16, which is more than a year.
 \end{framed}
 
 \subsection{Seasonal Trend Decomposition with \texttt{stlplus}}
+\label{sec:a1950.stl}
 
 As we discussed in section~\ref{sec:stl}, Seasonal Trend Loess decomposition is 
 a very powerful procedure that can capture seasonality and long term trend in a
@@ -1160,20 +1161,27 @@ processors.
   \item[Output] Same key-value pairs, except that the value of each pair includes
   three new columns: \texttt{seasonal}, \texttt{trend}, and \texttt{remainder} 
   for each observation.
-  \item[Map]First input key-value pairs whose key contains year larger than 1950
-  are filtered out. Next we change the key from a vector of \texttt{station.id} 
-  and month index to \texttt{station.id} only. 
-  \item[Reduce] 576 of one-row data.frame corresponding to one station are 
-  aggregated to be one data.frame. Concretely all one-row data.frame who share
-  the same \texttt{station.id} are shuffled and transferred to one reducer, and 
-  then R function \texttt{rbind} is called in that reducer to combine those one-row 
-  data.frame, which includes (1) \texttt{year}, year of the observation, 
-  (2) \texttt{month}, month of year (January to December), (3) \texttt{tmax}, 
-  the monthly maximum temperature, (4) \texttt{latitude}, (5) \texttt{longitude}, 
-  and (6) \texttt{elevation}. We filter out stations who does not have any valid
-  observation in 576 months. So finally there are 7,738 key-value pairs have been
-  generated and save on HDFS. 
+  \item[Map] For each input key-value pairs, we pass into \texttt{stlplus}
+  function the observation column and time column in the data.frame of value, as
+  well as a group of predefined smoothing parameter, which are \texttt{s.window},
+  \texttt{s.degree}, \texttt{t.window}, \texttt{t.degree}, \texttt{inner}, and
+  \texttt{outer}. The result of \texttt{stlplus} is a new data.frame which 
+  includes \texttt{seasonal}, \texttt{trend}, \texttt{remainder} three new columns
+  comparing with the input value. The new data.frame is saved with key as the 
+  intermediate key-value pairs.
+  \item[Reduce] No Reduce step is needed. The intermediate key-value pairs are 
+  directly copied to HDFS.
 \end{description}
+
+Theoretically, we can pass into different smoothing parameters for different 
+stations. But here, we start with same group of smoothing parameters for all 
+stations. Intuitively, we would like to define those parameters for 
+\texttt{stlplus} function only once, and then just simply make them available to
+all stations. RHIPE implements this in a way that we define these smoothing 
+parameters in a R list object in the Global environment of the master R session,
+and then this R list will be copied onto HDFS and then copied to each mapper.
+
+\subsubsection{s.window = 21, s.degree = 2, t.window = 451, t.degree = 2}
 
 \subsection{Tunning Parameters of Seasonal Trend Loess}
 
@@ -1236,6 +1244,7 @@ the factors we choose is $w_s$ and $w_t$, each of which has three levels. The
 total number of group of parameter setting is 9.
 
 \subsubsection{Generating Database for Experiment}
+\label{sec:a1950.stlexp}
 
 If we conduct the above experiment in series, we have to run 
 $271 \times 7738 = 2096998$ number of STL fitting for all stations in R, which is 
@@ -1249,7 +1258,7 @@ fitting have to be sequentially executed in R with either \texttt{for} loop or
 \texttt{lapply} function. We have to consider other more efficient parallel 
 procedure for the experiment.
 
-There are other two ways to carry out the parallel procedure, which are less 
+There are two ways to carry out the parallel procedure, which are less 
 heavy with respect to computation of each mapper. One is to create a share
 R object, namely a data.frame containing all 576 observations of all 7,738 
 stations, and it is saved on HDFS immediately after the MapReduce job is 
@@ -1334,7 +1343,7 @@ for anther two to explore and cover the design space. Besides, the number of inn
 iterations and the number of outer iterations are also kept constant.
 
 In the next several section, we detail the experiment set up, visualization for 
-the diagnostic, and the parameter selection based on prediction error.
+the diagnostics, and the parameter selection based on prediction error.
 
 \subsubsection{Experiment 1,  
 \textmd{$w_s=c(21, 30, 39)$, $w_t=c(231, 313, 451)$, $d_s=1$, $d_t=2$}
@@ -2048,6 +2057,7 @@ In summary, we varied the s.window, s.degree, t.window, and t.degree four factor
 to find the best prediction stlplus model with respect to the prediction error.
 
 \subsection{Spatial Decomposition}
+\label{sec:a1950.spafit}
 
 As we introduced in section XXX, \texttt{stlplus} is a very powerful procedure
 which can capture the seasonal and overall trend in the time series. In the 
@@ -2066,17 +2076,351 @@ is \texttt{periodic}, and $G_{ml}$ is the geographic component at month m,
 location l. $R_{ml}$ is the residual. 
 
 Before we start the spatial fit in each month parallelly, the a new division by
-month which is key-value pairs including $S_{ml}$, $T_{ml}$, and \texttt{stlplus} 
+month which are key-value pairs including $S_{ml}$, $T_{ml}$, and \texttt{stlplus} 
 remainder in the value, and month index as key needs to be generated on HDFS.
+The result of parallel Seasonal Trend Loess fit from previous section is saved
+as by station divisions on HDFS. We have to utilize another MapReduce job to 
+swap the division from by station to by month.
+
+\begin{description}
+  \item[Input] division by station with STL fitting results generated from 
+  section~\ref{sec:a1950.stl}. For each key-value pair, the key is one of 
+  \texttt{station.id}, and the value is the data.frame includes STL fitting 
+  results for corresponding station.
+  \item[Output] division by month key-value pairs. The key is a vector of 
+  \texttt{year} and \texttt{month} which identifies one of 576 months, and the 
+  value is a data.frame with 7,738 rows and 8 columns which are station 
+  information (longitude, latitude, and elevation) and STL fitting result 
+  (\texttt{trend}, \texttt{seasonal}, and \texttt{remainder}) for the 
+  corresponding station in that given month.
+  \item[Map] A FlatMap function is defined. For each map input key-value pair, 
+  \texttt{station.id} column is added to the value, and then we brake the input 
+  value to be 576 one-row data.frame. Then we generate an intermediate key-value 
+  pair for each of them, whose corresponding key is the vector of \texttt{year} 
+  and \texttt{month}. Meanwhile These two columns are removed from the one-row 
+  data.frame.   
+  \item[Reduce] All intermediate key-value pairs generated in the Map step are 
+  shuffled and sorted, then every 7,738 one-row data.frame who share the same 
+  key are combined together by \texttt{rbind} function. The final output key-value
+  pairs are then saved on HDFS.
+\end{description}
+
+The next MapReduce job we exhibit how to read in above new division by month from 
+HDFS, and then process the spatial loess fit on each key-value pairs of the 
+remainder surface from STL fitting in each month.
+
+\begin{description}
+  \item[Input] 576 input key-value pairs which are generated in the MapReduce job
+  above with remainder of each station in a given month in the value.
+  \item[Output] same key-value pairs but includes the spatial loess fitted value
+  as a new column in the data.frame of the values.
+  \item[Map] For each key-value pair, the \texttt{spaloess} function from 
+  \texttt{Spaloess} package is called for spatial loess model which is fitted on
+  the remainder surface against to longitude, latitude, and elevation of each 
+  station. A pre-defined local span parameter and local polynomial degree 
+  parameter are also passed into Map step by sharing object in RHIPE.  
+  \item[Reduce] There is no Reduce step needed. Result from the Map is saved on
+  HDFS.
+\end{description}
+
+We specify the smoothing parameter span of spatial loess to be 0.015 and local
+polynomial degree to be quadratic. Longitude and latitude are included in the 
+local polynomial model as predictor. Elevation with log base 2 transformation is
+added in the model as conditional parametric predictor with first and second 
+degree as well, which means the elevation will be fitted as a global variable 
+instead of locally. 
+
+Totally, there are 2,096,822 residuals. The first diagnostic view graph for the
+residuals is to visualize the distribution of residuals. 
+However, plotting all 2,096,822 residuals on one page of plot is not trivial. Not
+mention the size of the visual graph, generating the graph itself is time 
+consuming. The easiest way to simplify the plot is to draw only specific quantiles
+instead of all of them. Concretely, we specify a sequence of pre-defined f-value,
+$f_i$, and then approximate the $q(f_i)$ quantiles correspondingly. With respect
+to the approximation method, we borrow the idea from the \texttt{drQuantile} 
+function of \texttt{datadr} package \cite{datadr}, which we calculate the quantiles
+in parallel. This process is accomplished in a sequence of MapReduce jobs described 
+below. The first MapReduce job is calculating the overall range of the residuals.
+
+\begin{description}
+  \item[Input] 576 input key-value pairs, key is the vector of \texttt{year} and
+  \texttt{month}, and value is the data.frame including 7,738 rows of 
+  \texttt{residual}, \texttt{trend}, \texttt{seasonal}, and \texttt{spafit}.
+  \item[Output] one key-value pair whose value is a vector with the maximum and
+  minimum of the residual.
+  \item[Map] For each input key-value pair, the minimum and maximum value of 
+  residual is calculated and saved as a numeric vector. Meanwhile, the input
+  key is changed to be 1, which is meaningless.
+  \item[Reduce] The minimum and maximum of each month are grouped and sent into
+  one reducer. The overall range of residual is calculated based on them.
+\end{description}
+
+And then, the whole range of residual is equally cut into 10,000 small intervals 
+or bins. The idea is trying to count the frequency of residuals falling into each
+bin and using the center of each bin to represent the value of all residuals in
+the bin, and it can be implemented lightly in parallel. This procedure is 
+demonstrated in the following MapReduce job.
+
+\begin{description}
+  \item[Input] 576 input key-value pairs, key is the vector of \texttt{year} and
+  \texttt{month}, and value is the data.frame including 7,738 rows of 
+  \texttt{residual}, \texttt{trend}, \texttt{seasonal}, and \texttt{spafit}.
+  \item[Output] 10,000 key-value pairs whose key is the center point of each 
+  bin, and value is the number of residuals falling into the corresponding bin.
+  \item[Map] For each input key-value pair, the frequency of residuals in each
+  of 10,000 bins are calculated by R function \texttt{cut}. Then we generate
+  10,000 intermediate key-value pairs, one for each bin. The key is index of bin,
+  and value is the count of residuals in corresponding bin. 
+  \item[Reduce] All counts who share the same bin index are shuffled, sorted, and
+  sum together. The final 10,000 frequencies of residuals in bins are saved as
+  key-value pairs on HDFS.
+\end{description}
+
+Once we got the frequency table of residuals in each bin, it is trivial to get
+the accumulated frequency, based on which, we can easily approximate the 
+quantiles at the pre-defined f values $f_i$ by left-continuous constant 
+interpolation. In Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.residual.centerquant.pdf}
+{\ref*{spafit.centerquant}}, sequence of quantiles from 0.005 quantiles to 0.995
+quantiles increment by 0.005 are plotted against to their corresponding f-value.
+It shows that, 99\% of residuals are symmetrically distributed within $\pm 2$, 
+and are centering at 0 as well. 90\% of residuals, which are 1,887,140, are 
+distributed within $\pm 1$.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.residual.centerquant.pdf}
+  {Link to figure}
+  \captionof{figure}{The distribution of residual}
+  \label{spafit.centerquant}
+\end{center}
+\end{framed}
+
+Moreover, a quantile-quantile plot of residual is shown in Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.residual.QQ.pdf}
+{\ref*{spafit.qq}}. The 199 quantiles from 0.005 to 0.995 are drawn against to
+the corresponding quantiles from a t-distribution with degree of freedom 3. 
+Clearly, The linearity of the points suggests that the data are linearly related
+to a t-distribution centered at 0 with degree of freedom 3.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.residual.QQ.pdf}
+  {Link to figure}
+  \captionof{figure}{The quantile-quantile plot of residual}
+  \label{spafit.qq}
+\end{center}
+\end{framed}
+
+Besides the diagnostics plot of the distribution of residuals, plots of the 
+residuals against the explanatory variables (longitude, latitude, and elevation)
+should also be visualized and assessed.
+
+In Figure~\href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.lon.lat.pdf}
+{\ref*{spafit.lon.lat}}, the final fitted residual is plotted against to longitude
+conditional on equally cut interval of latitude for each month. There are roughly
+250 points in each panel of latitude interval. Also a loess 
+smoothing curve is added with span is equal to 0.25 and degree is linear. 
+Collectively, the loess smoothing curve in each panel of latitude level in a given
+month is surprisingly a almost flat line closed to 0. Meantime, residuals are
+randomly scattered about 0 and the width is equal throughout for all panels of 
+each month. But we notice there are some outliers with extreme residuals (outside
+of $\pm 2$). We will analyze their property in later subsection.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.lon.lat.pdf}
+  {Link to figure}
+  \captionof{figure}{Residual against longitude conditional on latitude}
+  \label{spafit.lon.lat}
+\end{center}
+\end{framed}
+
+As we mentioned in section~\ref{sec:impute.w/o.elev}, graph object for each month 
+are generated in parallel in a MapReduce job and saved on HDFS as key-value pairs. 
+Then they are read back from HDFS to the front end R session, and drawn on multiple 
+pages of one graph file sequentially. Similarly, residual is also plotted against 
+to latitude conditional on 20 equally cut interval of longitude for each month 
+in Figure~\href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.lat.lon.pdf}
+{\ref*{spafit.lat.lon}}. Same phenomenon can be found according to the loess 
+smoothing line added in each panel, residuals are randomly scattered around 0 
+without any pattern with respect to latitude in all panels of longitude in each 
+of 576 months. And majority of the residuals fall into the range of -2 to 2.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.lat.lon.pdf}
+  {Link to figure}
+  \captionof{figure}{Residual against longitude conditional on latitude}
+  \label{spafit.lat.lon}
+\end{center}
+\end{framed}
+
+After the longitude and latitude, residuals should be also assessed with elevation.
+As shown in 
+Figure~\href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.elev.lat.pdf}
+{\ref*{spafit.elev.lat}} and 
+Figure~\href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.elev.lon.pdf}
+{\ref*{spafit.elev.lon}}, the residuals are graphed against the log base 2 of
+elevation plus 128 conditional on intervals of latitude and longitude respectively.
+The reason of adding a base line of 128 is because there are some of stations 
+with negative elevation. Collectively, there is not any pattern related to elevation
+that is remained in residual. The loess smoothing curves are all surprisingly 
+around 0 within each panel of longitude or latitude in each month.
+
+
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.elev.lat.pdf}
+  {Link to figure}
+  \captionof{figure}{Residual against elevation conditional on latitude}
+  \label{spafit.elev.lat}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.elev.lon.pdf}
+  {Link to figure}
+  \captionof{figure}{Residual against elevation conditional on longitude}
+  \label{spafit.elev.lon}
+\end{center}
+\end{framed}
+
+\subsubsection{Outliers}
+
+Previously, we illustrated the distribution of residuals between 0.005 and 0.995
+quantiles. It still worths us to take a look at the 1\% of outliers based on the
+value of residuals.
+
+
+\subsection{Tunning Parameters of Spatial Loess}
+
+In the spatial loess fitting, there are two smoothing parameters, span and degree,
+which are used to control the size of observations and the complexity of each 
+local model. But just as most of nonparametric method, there is no rule of thumb
+to determinate the choice of these smoothing parameters. Consequently, we utilize 
+the leave-p-out cross validation method to find the best model based on the mean 
+squared error. Specifically, 128 stations are randomly sampled as testing dataset
+from the 7,738 stations of each month. In order to guarantee these 128 stations
+are not clustering together, we sample them from a kd-tree built based on all
+stations with 128 cells, one station from each cell. Then the maximum temperature
+at 128 stations of given month are predicted using the rest of training stations,
+and prediction error of each 128 stations are calculated. This procedure is 
+repeated until the prediction error is calculated at all 7,738 stations, and the
+mean squared error (MSE) of given month is calculated as following
+$$
+MSE_m = \sum_{l=1}^{7738} \left( Y_{ml} - \hat S_{ml} - \hat T_{ml} - \hat G_{ml}
+\right) 
+$$
+where $m$ is from 1 to 576. The MSE for each month is calculated in parallel.
+
+\subsubsection{Generating Database for Cross Validation}
+
+As we discussed in section~\ref{sec:a1950.stlexp}, the leave-128-out cross 
+validation for each month can intuitively be proceeded in parallel using one 
+MapReduce job which takes the new by month division generated in 
+section~\ref{sec:a1950.spafit} as input and carries out leave-128-out cross 
+validation sequentially in one map function. However, this unfortunately requires
+each mapper to execute the leave-128-out cross validation in a \texttt{for} loop. 
+So the map function is greatly computationally heavy. Instead of doing this, we
+make the computation to be even more parallel. 
+
+We illustrate the details of generating the database for cross validation in the
+following MapReduce job.
+
+\begin{description}
+  \item[Input] 576 input key-value pairs, key is the vector of \texttt{year} and
+  \texttt{month}, and value is the data.frame including 7,738 rows of 
+  \texttt{tmax}, \texttt{trend}, \texttt{seasonal}, \texttt{remainder}, and
+  station information.
+  \item[Output] 35,136 key-value pairs are generated, whose key is a combination
+  of month index and index from 1 to 61 of the observation in each cell, 
+  and value is same as the input value but with a new column \texttt{flag} which
+  identifies 128 stations as the testing dataset.
+  \item[Map] A FlatMap function is defined in which 61 intermediate key-value
+  pairs are generated from each input key-value pair. First of all, a kd-tree with
+  128 cells are created based on all 7,738 \texttt{remainder}. Stations in each 
+  cell are assigned randomly with a index of 1 to 61. We loop over the index 
+  \texttt{ii} from 1 to 61, which is the number of points in each cell of kd-tree. 
+  The key of intermediate key-value pairs is vector of \texttt{year},
+  \texttt{month}, and \texttt{ii}. And the value is a copy of input value but with
+  a new column \texttt{flag} vector which are all 0 except 128 stations with 
+  \texttt{ii} index are 1. Consequently there are 35,136 intermediate key-value
+  pairs are generated in total.
+  \item[Reduce] No Reduce step is needed. All intermediate key-value pairs are
+  saved on HDFS right after Map step.
+\end{description}
+
+Next, the database we produced above is read into a MapReduce job to proceed the 
+cross validation in parallel.
+
+\begin{description}
+  \item[Input] database of cross validation with 35,136 key-value pairs are read 
+  in.
+  \item[Output] 576 output key-value pairs are generated. The key is the month
+  index, vector of \texttt{year} and \texttt{mont}; value is the mean squared
+  error (MSE) for the corresponding month.
+  \item[Map] For each input key-value pair, prediction at the 128 testing locations
+  are calculated calling \texttt{spaloess} function from the R package 
+  \texttt{Spaloess}. The \texttt{distance} argument is defined using Great Circle
+  distance, and \texttt{span}, \texttt{degree} smoothing parameters are 
+  pre-defined in the front end R session before the job and then shared with all
+  mappers through HDFS. Next the summation of squared error based on the testing 
+  dataset is calculated and saved as the value of intermediate key-value pairs. 
+  The corresponding key is jut the month index: vector of \texttt{year} and 
+  \texttt{month}.
+  \item[Reduce] All summation of squared error who share the same key are shuffled 
+  and grouped together, then sent to one reducer. The final MSE is calculated 
+  for each month. The final 576 key-value pairs, one for each month, are saved 
+  on HDFS.
+\end{description}
+
+\subsubsection{Experiment: span = c(0.005, 0.015, 0.025, 0.05), degree = c(1, 2)}
+
+We conduct a experiment with 8 different smoothing parameters of the spatial loess
+model which are the combination of 4 different values of span and 2 values of
+degree. Then 8 MapReduce jobs are executed sequentially, one for each group pf 
+smoothing parameter, and MSE of each month are calculated as we described above.
+
+In Figure~\href{../plots/a1950/spafit/QuanMABSE.a1950.tmax.span.pdf}
+{\ref*{mse.span}}, the quantiles of MSE are plotted against to the corresponding
+f-value conditional on the span value. And within each panel, local linear and 
+local quadratic fitting are differentiated by different color of points. In the 
+panel of span is equal to 0.005, local linear fitting has lower value of MSE 
+than local quadratic. This is a reasonable result because with span equal to 
+0.005, very limited number of neighbors were used in the local fitting. Quadratic
+local model will make the high variance issue even more serious. However, besides 
+0.005, local quadratic fitting collectively gives a better prediction results 
+than local linear fitting under all other span values.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/QuanMABSE.a1950.tmax.span.pdf}{Link to figure}
+  \captionof{figure}{The distribution of MSE conditional on span}
+  \label{mse.span}
+\end{center}
+\end{framed}
+
+On the other hand, the quantiles of MSE are plotted against to the corresponding
+f-value conditional on the degree superposed on span value in 
+Figure~\href{../plots/a1950/spafit/QuanMABSE.a1950.tmax.degree.pdf}
+{\ref*{mse.degree}}. In both linear and quadratic local fitting, model with span
+equal to 0.015 provides lowest prediction error compared with other span values.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/QuanMABSE.a1950.tmax.degree.pdf}{Link to figure}
+  \captionof{figure}{The distribution of MSE conditional on degree}
+  \label{mse.degree}
+\end{center}
+\end{framed}
 
 
 \section{Modeling: Decomposition of Spatial Temporal Data}
 
-Finally we shift our gears to the analysis of spatial and temporal local fitting 
-of loess. 
+Finally we shift our gears to the analysis of a even larger spatial-temporal 
+dataset based on the procedure we proposed previously.
 
-\subsection{Time Decomposition}
 
-\subsection{Spatial Decomposition}
-
-\subsection{Backfitting}
