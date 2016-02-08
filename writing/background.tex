@@ -37,7 +37,7 @@ but is constructed according to information derived from the data.
 \subsection{Local Regression models}
 
 One approach from the nonparametric regression family to modeling an unknown and
-complex $f$ is local regression \cite{Cleveland:1979}. Instead of assuming 
+complex $f$ is local regression. Instead of assuming 
 $f(x)$ to have a parametric form overall, we assume that the data can locally, 
 within some neighborhood of $x$, be well-approximated by a parametric form which 
 can be polynomial or even constant. For instance, let a neighborhood of $x$ be
@@ -46,10 +46,14 @@ Nadaraya \cite{nadaraya1964} and Watson \cite{watson1964} proposed a local
 constant estimator with a pre-defined kernel function as weighting function, 
 called Nadaraya-Watson estimator:
 \begin{equation} 
-\hat f(x) = \frac{\sum_{i=1}^n K(\frac{x_i - x}{h})y_i}{\sum_{i=1}^n K(\frac{x_i - x}{h})}
+\hat f(x) = \sum_{i=1}^{n} \omega_{i}y_i
 \end{equation} 
-where $K$ is non-negative real-valued integrable function, which satisfying the 
-following two requirements
+where 
+\begin{equation} 
+\omega_i = \frac{ K(\frac{x_i - x}{h})}{\sum_{i=1}^n K(\frac{x_i - x}{h})}
+\end{equation} 
+and $K(\cdot)$ is a non-negative real-valued integrable function, which satisfying 
+the following two requirements
 \begin{equation} 
 \int_{-\infty}^{\infty} K(\mu)d\mu = 1
 \end{equation} 
@@ -66,10 +70,41 @@ line in the neighborhood of $x$. The prediction variable only effects the weight
 of each neighbors of target point $x$. A more general model than local constant
 model is to fit a low order polynomial in the neighborhood of $x$. So the predictor
 variable not only effects the weights of neighbors, but also the local model itself.
+In the next subsection, we will present more detail about local regression model
+specifically the local polynomial model.
 
-
-\subsection{Fitting a Local Regression Model}
+\subsection{Fitting a Local Polynomial Model}
 \label{sec:loess}
+There are several ways to fit a local polynomial models, we mainly focus on
+particular one: $loess$. It is a more general and flexible method than the kernel
+regression we discussed above. Cleveland introduced this locally weighted regression
+method in \cite{Cleveland:1979}. Later on, other references about the methodology, 
+theory, and computation for the loess method are well illustrated in 
+\cite{cleveland1988locally}, \cite{cleveland1991computational}, 
+\cite{cleveland1988regression}, and \cite{cleveland1996smoothing}. 
+
+Suppose we are trying to fit at target point $x$ in the predictor space with
+one dimension. The loess fit is obtained by locally weighted least square with a
+polynomial of degree $\lambda$ using $n_{\alpha}$ nearest neighbors of $x$. 
+Concretely, a smoothing parameter $\alpha$ is defined between 0 and 1, which is
+the ratio of number of observations included in the model as neighbors. Then 
+\begin{equation} 
+n_{\alpha} = \min(n, \lfloor \alpha n \rfloor)
+\end{equation}
+A weight is assigned to each neighbors based on their distance to the target $x$.
+The closer neighbors is to the $x$, the higher weight the neighbors will get. The
+weight is defined as a function of the distance. Specifically, the tri-cube weight 
+function is used
+\begin{equation} 
+W(\mu) =
+  \begin{cases}
+    (1 - \mu^3)^3       & \quad \text{for } 0 \le \mu < 1\\
+    0  & \quad \text{for } \mu \ge 1\\
+  \end{cases}
+\end{equation}
+
+
+
 
 \subsection{Computation}
 
