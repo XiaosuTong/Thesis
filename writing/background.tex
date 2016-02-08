@@ -8,34 +8,76 @@ later depends heavily on these topics.
 
 \section{Nonparametric Regression}
 
-Nonparametric regression is a form of regression analysis in which the predictor 
-does not take a predetermined form but is constructed according to information
-derived from the data. Nonparametric regression requires larger sample sizes 
-than regression based on parametric models because the data must supply the 
-model structure as well as the model estimates.
+Regression analysis traces the mean value of a response variable ($y$) as a 
+function of one or several predictors ($x$'s). Suppose that there is $n$ pairs 
+of observations: $(x_1, y_1), \cdots, (x_n, y_n)$, the object of regression 
+analysis is to model the relationship between $y$ and $x$ in the form of
+\begin{equation} 
+y_i = f(x_i) + \epsilon_i
+\end{equation} 
+where $f$ is an unknown function, $\epsilon_i$ is the random error term in the
+observation which cannot be explained by the model. 
+As it is usually practiced in parametric approach, regression analysis assumes a 
+known form of function for $f(x_i)$, which is fully described by a finite 
+set of parameters, to be estimated. For example, linear function of predictor 
+variables:
+\begin{equation} 
+f(x_i) = \beta_0 + \beta_1x_i
+\end{equation} 
+where $\beta$s are the parameters in the model to be estimated. The relationship 
+between response variable and predictor variable is described and summarized 
+easily by the estimated parameters.
 
-\subsection{Local Regression Models}
+But sometimes $f(x)$ is flexible and unknown, we have to relate $y$ to $x$s 
+without assuming any functional form. And this is when nonparametric model comes 
+in. Concretely, nonparametric regression is a form 
+of regression analysis in which the predictor does not take a predetermined form 
+but is constructed according to information derived from the data.
 
-Often nature presents dependencies that are much more complex than can be captured
-with a simple parametric model. When the data suggest that $\mu(x)$ is a complex
-function, one may try to accommodate this by specifying a complex parametric model
-with many parameters.
+\subsection{Local Regression models}
 
-Another approach to modeling a complex $\mu$ that is much more simple and flexible
-is local regression \cite{Cleveland:1979}. Instead of constraining $\mu(x)$ to 
-have a parametric form, assume that the data locally, around some neighborhood of
-x, can be well-approximated by a parametric form, namely low order polynomials.
-
+One approach from the nonparametric regression family to modeling an unknown and
+complex $f$ is local regression \cite{Cleveland:1979}. Instead of assuming 
+$f(x)$ to have a parametric form overall, we assume that the data can locally, 
+within some neighborhood of $x$, be well-approximated by a parametric form which 
+can be polynomial or even constant. For instance, let a neighborhood of $x$ be
+$x \pm h$ for some bandwidth $h > 0$.
+Nadaraya \cite{nadaraya1964} and Watson \cite{watson1964} proposed a local 
+constant estimator with a pre-defined kernel function as weighting function, 
+called Nadaraya-Watson estimator:
+\begin{equation} 
+\hat f(x) = \frac{\sum_{i=1}^n K(\frac{x_i - x}{h})y_i}{\sum_{i=1}^n K(\frac{x_i - x}{h})}
+\end{equation} 
+where $K$ is non-negative real-valued integrable function, which satisfying the 
+following two requirements
+\begin{equation} 
+\int_{-\infty}^{\infty} K(\mu)d\mu = 1
+\end{equation} 
+\begin{equation} 
+K(-\mu) = K(\mu)
+\end{equation}
 The same idea can be illustrated when replacement of a quantitative variable by
-indicator variables 
+indicator variables. It uses a constant kernel function $K(\mu) = 1$ to assign
+equal weights to all neighbors within $x\pm h$. 
+
+However, no matter which kernel function is chosen, or what the bandwidth $h$ is,
+NW estimator has its limitation. It actually fits a weighted constant regression
+line in the neighborhood of $x$. The prediction variable only effects the weights
+of each neighbors of target point $x$. A more general model than local constant
+model is to fit a low order polynomial in the neighborhood of $x$. So the predictor
+variable not only effects the weights of neighbors, but also the local model itself.
+
 
 \subsection{Fitting a Local Regression Model}
 \label{sec:loess}
 
 \subsection{Computation}
 
+\subsection{General Additive Model}
+
 \section{Geographically Weighted Regression}
 
+\section{Kriging}
 
 \section{Seasonal Trend Decomposition using Loess (STL)}
 \label{sec:stl}

@@ -918,6 +918,12 @@ would expect that, overall, the influence of the variables in which the surface
 is conditionally parametric would be less than the influence of the other 
 variables. 
 
+The conditionally parametric model is similar to the partially linear model,
+in that the fit is smooth in some variables and parametric in others. But
+the conditionally parametric fit allows all coefficients of the parametric
+variables to depend on the smoothing variables. A conditionally quadratic
+fit has the form
+
 \subsubsection{span=0.015, degree=2}
 
 Based on the result we found in the previous subsection, we modify the span of 
@@ -2416,6 +2422,21 @@ equal to 0.015 provides lowest prediction error compared with other span values.
   \label{mse.degree}
 \end{center}
 \end{framed}
+
+\subsection{Outliers}
+
+\begin{itemize}
+  \item January 13, 1950 - The January 1950 Blizzard
+  21.4" of snow fell in Seattle on the 13th together with winds of 25-40 MPH, the 
+  2nd greatest 24 hour snowfall recorded. Claimed 13 lives in the Puget Sound area
+  During Jan, 18 days with high temps 32 degrees or lower.
+  The winter of 1949-50 the coldest winter on record in Seattle - average temp 
+  34.4 degrees. Eastern Washington, North Idaho, and parts of Oregon were 
+  paralyzed - lower elevation snow depths ranged up to 50 inches and temperatures
+  plunged into minus teens and twenties. Several dozen fatalities.
+  \item The second item
+  \item The third etc
+\end{itemize}
 
 
 \section{Modeling: Decomposition of Spatial Temporal Data}
