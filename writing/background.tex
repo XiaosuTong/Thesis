@@ -28,23 +28,24 @@ where $\beta$s are the parameters in the model to be estimated. The relationship
 between response variable and predictor variable is described and summarized 
 easily by the estimated parameters.
 
-But sometimes $f(x)$ is flexible and unknown, we have to relate $y$ to $x$s 
-without assuming any functional form. And this is when nonparametric model comes 
-in. Concretely, nonparametric regression is a form 
-of regression analysis in which the predictor does not take a predetermined form 
-but is constructed according to information derived from the data.
+But in real data analysis, $f(x)$ is flexible and unknown, we have to relate $y$ 
+to $x$ without assuming any functional form. And this is when nonparametric 
+model comes in. Concretely, nonparametric regression is a form 
+of regression analysis in which the relationship between response variable and 
+predictor does not have an explicit form but is constructed highly to the
+information derived from the data.
 
 \subsection{Local Regression models}
 
-One approach from the nonparametric regression family to modeling an unknown and
-complex $f$ is local regression. Instead of assuming 
+One approach in the nonparametric regression family to modeling an unknown and
+complex $f$ is called local regression. Instead of assuming 
 $f(x)$ to have a parametric form overall, we assume that the data can locally, 
-within some neighborhood of $x$, be well-approximated by a parametric form which 
-can be polynomial or even constant. For instance, let a neighborhood of $x$ be
+within some neighborhood of $x_0$, be well-approximated by a parametric form which 
+can be polynomial or even constant. For instance, let a neighborhood of $x_0$ be
 $x \pm h$ for some bandwidth $h > 0$.
 Nadaraya \cite{nadaraya1964} and Watson \cite{watson1964} proposed a local 
-constant estimator with a pre-defined kernel function as weighting function, 
-called Nadaraya-Watson estimator:
+constant estimator, or kernel regression method, with a pre-defined kernel 
+function as weighting function, called Nadaraya-Watson estimator:
 \begin{equation} 
 \hat f(x) = \sum_{i=1}^{n} \omega_{i}y_i
 \end{equation} 
@@ -66,15 +67,18 @@ equal weights to all neighbors within $x\pm h$.
 
 However, no matter which kernel function is chosen, or what the bandwidth $h$ is,
 NW estimator has its limitation. It actually fits a weighted constant regression
-line in the neighborhood of $x$. The prediction variable only effects the weights
-of each neighbors of target point $x$. A more general model than local constant
-model is to fit a low order polynomial in the neighborhood of $x$. So the predictor
+line in the neighborhood of $x_0$. The prediction variable only effects the weights
+of each neighbors of target point $x_0$. Kernel regression cannot even estimate 
+a linear surface without bias \cite{cleveland1988regression}, especially on the 
+boundaries of the domain. A more general model than local constant
+model is to fit a low order polynomial in the neighborhood of $x_0$. So the predictor
 variable not only effects the weights of neighbors, but also the local model itself.
 In the next subsection, we will present more detail about local regression model
 specifically the local polynomial model.
 
 \subsection{Fitting a Local Polynomial Model}
 \label{sec:loess}
+
 There are several ways to fit a local polynomial models, we mainly focus on
 particular one: $loess$. It is a more general and flexible method than the kernel
 regression we discussed above. Cleveland introduced this locally weighted regression
@@ -83,30 +87,73 @@ theory, and computation for the loess method are well illustrated in
 \cite{cleveland1988locally}, \cite{cleveland1991computational}, 
 \cite{cleveland1988regression}, and \cite{cleveland1996smoothing}. 
 
-Suppose we are trying to fit at target point $x$ in the predictor space with
+Suppose we are trying to fit at target point $x_0$ in the predictor space with
 one dimension. The loess fit is obtained by locally weighted least square with a
-polynomial of degree $\lambda$ using $n_{\alpha}$ nearest neighbors of $x$. 
+polynomial of degree $\lambda$ using $n_{\alpha}$ nearest neighbors of $x_0$. 
 Concretely, a smoothing parameter $\alpha$ is defined between 0 and 1, which is
 the ratio of number of observations included in the model as neighbors. Then 
 \begin{equation} 
 n_{\alpha} = \min(n, \lfloor \alpha n \rfloor)
 \end{equation}
-A weight is assigned to each neighbors based on their distance to the target $x$.
-The closer neighbors is to the $x$, the higher weight the neighbors will get. The
+A weight is assigned to each neighbors based on their distance to the target $x_0$.
+The closer neighbors is to the $x_0$, the higher weight the neighbors will get. The
 weight is defined as a function of the distance. Specifically, the tri-cube weight 
-function is used
+function is used.
 \begin{equation} 
-W(\mu) =
+T(\mu) =
   \begin{cases}
     (1 - \mu^3)^3       & \quad \text{for } 0 \le \mu < 1\\
     0  & \quad \text{for } \mu \ge 1\\
   \end{cases}
 \end{equation}
+It is flatter on the top when $\mu$ is around 0, and is differentiable at the 
+boundary of its support.
+Meanwhile, the distance from each neighbor to the target point is calculated 
+based on such as Euclidean distance, Great Circle distance, or Mahalanobis 
+distance \cite{mahalanobis1936}. Suppose we use Euclidean distance $\|\cdot\|$, 
+and $d(x_0)$ is the distance between $x_0$ and its $n_{\alpha}$th nearest neighbor.
+Then the weights for each $x_i$ when fitting at $x_0$ are generated as
+\begin{equation} 
+\omega_i(x_0) = T \left( \frac{\| x_i - x_0 \|}{d(x_0)} \right)
+\end{equation}
+which assigns 0 weight to $x_i$ outside the circle region with radius of $d(x_0)$.
 
+Once the weights of each $x_i$ are ready for a given $x_0$, the locally fitting
+is trivial. For example, let $Y=(y_1, y_2, \cdots, y_n)^{T}$ and 
+$\beta = (\beta_0, \beta_1, \beta_2)^{T}$, the local quadratic regression fit at
+target point $x_0$ can be illustrated in terms of matrix notation:
+\begin{equation}
+y = X \beta + \epsilon
+\end{equation} 
+and the objective function for a given target $x_0$ is: 
+\begin{equation}
+\label{weightedReg}
+\min_{\beta} \;\; (Y - X\beta)^TW(Y - X\beta)
+\end{equation} 
+where
+\begin{equation}
+X =  
+\begin{pmatrix}
+  1 & (x_1-x_0) & (x_1-x_0)^2 \\
+  1 & (x_2-x_0) & (x_2-x_0)^2 \\
+  \vdots  & \vdots & \vdots  \\
+  1 & (x_n-x_0) & (x_n-x_0)^2 
+\end{pmatrix}
+\end{equation} 
+is the design matrix of each local quadratic regression model, and weight diagonal
+matrix is
+\begin{equation}
+W =  
+\begin{pmatrix}
+  \omega_1(x_0) & 0 & \cdots & 0 \\
+  0 & \omega_2(x_0) & \cdots & 0 \\
+  \vdots  & \vdots & \ddots & \vdots  \\
+  0 & 0 & \cdots & \omega_n(x_0) 
+\end{pmatrix}
+\end{equation} 
+For each target point $x_0$, we need solve the optimization problem in 
+equation~\ref{weightedReg}. 
 
-
-
-\subsection{Computation}
 
 \subsection{General Additive Model}
 
