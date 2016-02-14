@@ -263,27 +263,59 @@ is able to be analyzed.
 \subsection{STL Procedure}
 
 As a filtering procedure, STL is trying to decompose a time series 
-$y_i$, where $i=1, \cdots, n$, to be
+$y_i$, $i=1, \cdots, n$, to be
 \begin{equation} 
 \label{stlModel}
 y_i = t_i + s_i + r_i
 \end{equation}
 where $t_i$, $s_i$, and $r_i$ are the trend, seasonal, and remainder components
 for $i$th time point respectively. With an pre-defined initial value of $s_i$ and 
-$t_i$ (usually set to be 0), STL starts to smooth the seasonal and trend components iteratively. The 
-seasonal component has to be determined based on a prior knowledge of the time
+$t_i$ (usually set to be 0), STL starts to smooth the seasonal and trend components iteratively, and the remainder is whatever left in $y_i$ besides the other two. 
+The seasonal component has to be determined based on a prior knowledge of the time
 series itself, which is the seasonal periodicity. For example, the dataset we will
 demonstrate in the second chapter is the about monthly maximum temperature in the
 United State. There are 12 observations in each annual period, so the $n_{(p)}$ 
 is equal to 12. If the time series is hourly temperature observation, then the
 $n_{(p)}$ is 24, and so forth.
 
-STL is comprised of two iterative procedures, an inner loop nested inside of an
-outer loop. All smoothing operation in STL are done by using loess method. The
-smoothing parameter $\alpha$ in loess is replaced by $q=\lfloor \alpha n\rfloor$.
+STL is comprised of two nested iterative procedures, an outer loop with an inter 
+loop inside. Collectively, all smoothing operation in STL are based on loess method
+heavily. Smoothing parameters are required to be specified for each smoothing 
+operation, and the smoothing parameter $\alpha$ is replaced by window size
+$w=\lfloor \alpha n\rfloor$ in those operation, which is just specifying the 
+number of observation used in local model instead of the ratio.  
 
+First in the smoothing procedure of seasonal component, the original time series 
+is divided into $n_{(p)}$ $cycle$-$subseries$, each of which is defined to be 
+the subseries at each time point of the seasonal cycle \cite{hafen2010local}, 
+\cite{Cleveland:1990}. For instance, the date of monthly maximum temperature 
+observation, all the observations of January will be the first subseries, and
+all values of February is the second subseries and so forth, so totally there are 
+12 subseries for monthly data. Each subseries is smoothed separately and 
+independently and then recombined together. Next, smoothing procedure of 
+trend component is applied to the $deseasonalized$ series, which exclusive the 
+seasonal component fit from the $y_i$. The outer loop starts with the inner loop
+in which two components are estimated back and forth using back-fitting algorithm 
+\cite{breiman1985estimating}. After the inner loop, a robustness weight is 
+calculated for each time $i$ before the end of current iteration of outer loop,
+and it will be passed into the next iteration.
 
 \subsubsection{Inner loop}
+
+The inner loop is basically the estimation procedure between seasonal and trend
+components. Concretely, the trend component is initialized as 0, then the seasonal
+component is obtained by applying smoothing separately to each $cycle$-$subseries$ 
+of the $detrending$ series using local weighted regression with window size $w_s$ 
+and degree $d_s$; trend component is calculated by another local weighted smoothing
+to the $deseasonalized$ series with window size $w_t$ and degree $d_t$. Moreover, 
+seasonal and trend smoothing procedure can be also treated as two filtering 
+procedure. Unfortunately two filtering procedure compete with each other the 
+variation in the series at low frequencies. So another high-pass filtering procedure
+is applied before the trend smoothing.
+
+There are 6 steps in the inner loop in total, with
+
+
 
 \subsubsection{Outer loop}
 
