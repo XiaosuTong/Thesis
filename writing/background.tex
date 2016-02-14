@@ -1,57 +1,61 @@
 \chapter{BACKGROUND}
 
-This chapter introduces local regression and some time series modeling methods,
-with emphasis on a time series decomposition method: seasonal trend decomposition
-using loess (STL), and a spatially local regression method. The goal is to be
-brief but still cover the methods thoroughly, as much of the new work developed
-later depends heavily on these topics.
+In this chapter we briefly introduce one type of nonparametric regression method,
+namely local polynomial regression method, followed by emphasis on two specific 
+generalization of loess as time series decomposition method called Seasonal 
+Trend Loess (STL) and Geographically weighted Regression respectively. The main
+purpose here is to cover the foundation methodology and principle of the data
+analysis proceeded in later chapter, which is crucially depends on these topics.  
+
 
 \section{Nonparametric Regression}
 
-Regression analysis traces the mean value of a response variable ($y$) as a 
-function of one or several predictors ($x$'s). Suppose that there is $n$ pairs 
-of observations: $(x_1, y_1), \cdots, (x_n, y_n)$, the object of regression 
-analysis is to model the relationship between $y$ and $x$ in the form of
+In the family of regression analysis, the conditional expectation of a response 
+variable ($y$) is assumed to be a function of one or several predictors ($x$'s). 
+Suppose the data contains $n$ pairs of observations: 
+$(x_1, y_1), \cdots, (x_n, y_n)$, the object of regression analysis is to model 
+the relationship between $y$ and $x$ in the form of
 \begin{equation} 
 y_i = f(x_i) + \epsilon_i
 \end{equation} 
-where $f$ is an unknown function, $\epsilon_i$ is the random error term in the
-observation which cannot be explained by the model. 
-As it is usually practiced in parametric approach, regression analysis assumes a 
+where $f$ is an unknown function, $\epsilon_i$ is the random error term left in 
+the observation which cannot be explained by the model. 
+As it is usually proposed in parametric approach, regression analysis assumes a 
 known form of function for $f(x_i)$, which is fully described by a finite 
-set of parameters, to be estimated. For example, linear function of predictor 
-variables:
+set of parameters. For example, a linear function of predictor variables is 
+commonly chosen:
 \begin{equation} 
 f(x_i) = \beta_0 + \beta_1x_i
 \end{equation} 
-where $\beta$s are the parameters in the model to be estimated. The relationship 
+where $\beta_0$ and $\beta_1$ are the parameters in the model to be estimated. 
+The advantage of parametric regression method is that the relationship 
 between response variable and predictor variable is described and summarized 
 easily by the estimated parameters.
 
-But in real data analysis, $f(x)$ is flexible and unknown, we have to relate $y$ 
-to $x$ without assuming any functional form. And this is when nonparametric 
-model comes in. Concretely, nonparametric regression is a form 
-of regression analysis in which the relationship between response variable and 
-predictor does not have an explicit form but is constructed highly to the
-information derived from the data.
+But in real data analysis, $f(x)$ is flexible and unknown, so we may have to 
+relate $y$ to $x$ without assuming any pre-defined functional form. And this is 
+when nonparametric model is preferred. Concretely, within nonparametric 
+regression, the relationship between response variable and predictor does not 
+have an explicit form but is constructed based on the information derived from
+the data.
 
 \subsection{Local Regression models}
 
 One approach in the nonparametric regression family to modeling an unknown and
 complex $f$ is called local regression. Instead of assuming 
-$f(x)$ to have a parametric form overall, we assume that the data can locally, 
-within some neighborhood of $x_0$, be well-approximated by a parametric form which 
-can be polynomial or even constant. For instance, let a neighborhood of $x_0$ be
-$x \pm h$ for some bandwidth $h > 0$.
+$f(x)$ to have a parametric form overall, we assume that the data can be locally, 
+within some neighborhood of $x_0$, well-approximated by a parametric form which 
+may be polynomials or even a constant. For instance, let a neighborhood of $x_0$ 
+be $x_0 \pm h$ for some bandwidth $h > 0$.
 Nadaraya \cite{nadaraya1964} and Watson \cite{watson1964} proposed a local 
 constant estimator, or kernel regression method, with a pre-defined kernel 
 function as weighting function, called Nadaraya-Watson estimator:
 \begin{equation} 
-\hat f(x) = \sum_{i=1}^{n} \omega_{i}y_i
+\hat f(x_0) = \sum_{i=1}^{n} \omega_{i}y_i
 \end{equation} 
 where 
 \begin{equation} 
-\omega_i = \frac{ K(\frac{x_i - x}{h})}{\sum_{i=1}^n K(\frac{x_i - x}{h})}
+\omega_i = \frac{ K(\frac{x_i - x_0}{h})}{\sum_{i=1}^n K(\frac{x_i - x_0}{h})}
 \end{equation} 
 and $K(\cdot)$ is a non-negative real-valued integrable function, which satisfying 
 the following two requirements
@@ -62,30 +66,31 @@ the following two requirements
 K(-\mu) = K(\mu)
 \end{equation}
 The same idea can be illustrated when replacement of a quantitative variable by
-indicator variables. It uses a constant kernel function $K(\mu) = 1$ to assign
-equal weights to all neighbors within $x\pm h$. 
+indicator variables in linear regression. It uses a constant kernel function 
+$K(\mu) = 1$ to assign equal weights to all neighbors within $x_0 \pm h$. 
 
 However, no matter which kernel function is chosen, or what the bandwidth $h$ is,
 NW estimator has its limitation. It actually fits a weighted constant regression
 line in the neighborhood of $x_0$. The prediction variable only effects the weights
-of each neighbors of target point $x_0$. Kernel regression cannot even estimate 
-a linear surface without bias \cite{cleveland1988regression}, especially on the 
-boundaries of the domain. A more general model than local constant
-model is to fit a low order polynomial in the neighborhood of $x_0$. So the predictor
-variable not only effects the weights of neighbors, but also the local model itself.
-In the next subsection, we will present more detail about local regression model
-specifically the local polynomial model.
+of each neighbors of target point $x_0$. In \cite{cleveland1988regression}, 
+Cleveland has well indicated that kernel regression always introduces bias in the
+estimation of a linear surface, especially on the boundaries of the domain. A more 
+sophisticate model than local constant model is to fit a low order polynomial in 
+the neighborhood of $x_0$. So the 
+predictor variable not only effects the weights of neighbors, it also provides more
+information to the local model. In the next subsection, we will present more detail
+about local regression model specifically the local polynomial model.
 
 \subsection{Fitting a Local Polynomial Model}
 \label{sec:loess}
 
-There are several ways to fit a local polynomial models, we mainly focus on
-particular one: $loess$. It is a more general and flexible method than the kernel
-regression we discussed above. Cleveland introduced this locally weighted regression
-method in \cite{Cleveland:1979}. Later on, other references about the methodology, 
-theory, and computation for the loess method are well illustrated in 
-\cite{cleveland1988locally}, \cite{cleveland1991computational}, 
-\cite{cleveland1988regression}, and \cite{cleveland1996smoothing}. 
+$loess$, short for locally weighted scatter-plot smoothing, also known as locally
+weighted polynomial regression, is a more general and flexible
+method than the kernel regression we discussed above. It was originally introduced 
+by Cleveland in \cite{Cleveland:1979}, and then well expanded in the references 
+of \cite{cleveland1988locally}, \cite{cleveland1991computational}, 
+\cite{cleveland1988regression}, and \cite{cleveland1996smoothing} in term of its
+methodology, theory, and computation
 
 Suppose we are trying to fit at target point $x_0$ in the predictor space with
 one dimension. The loess fit is obtained by locally weighted least square with a
@@ -97,7 +102,7 @@ n_{\alpha} = \min(n, \lfloor \alpha n \rfloor)
 \end{equation}
 A weight is assigned to each neighbors based on their distance to the target $x_0$.
 The closer neighbors is to the $x_0$, the higher weight the neighbors will get. The
-weight is defined as a function of the distance. Specifically, the tri-cube weight 
+weight is defined as a function of the distance. Specifically, a tri-cube weight 
 function is used.
 \begin{equation} 
 T(\mu) =
@@ -109,9 +114,10 @@ T(\mu) =
 It is flatter on the top when $\mu$ is around 0, and is differentiable at the 
 boundary of its support.
 Meanwhile, the distance from each neighbor to the target point is calculated 
-based on such as Euclidean distance, Great Circle distance, or Mahalanobis 
-distance \cite{mahalanobis1936}. Suppose we use Euclidean distance $\|\cdot\|$, 
-and $d(x_0)$ is the distance between $x_0$ and its $n_{\alpha}$th nearest neighbor.
+based on the choice of distance calculation, such as Euclidean distance, Great 
+Circle distance, or Mahalanobis distance \cite{mahalanobis1936}. 
+Suppose we use Euclidean distance $\|\cdot\|$, and $d(x_0)$ is the distance 
+between $x_0$ and its $n_{\alpha}$th nearest neighbor.
 Then the weights for each $x_i$ when fitting at $x_0$ are generated as
 \begin{equation} 
 \omega_i(x_0) = T \left( \frac{\| x_i - x_0 \|}{d(x_0)} \right)
@@ -119,16 +125,17 @@ Then the weights for each $x_i$ when fitting at $x_0$ are generated as
 which assigns 0 weight to $x_i$ outside the circle region with radius of $d(x_0)$.
 
 Once the weights of each $x_i$ are ready for a given $x_0$, the locally fitting
-is trivial. For example, let $Y=(y_1, y_2, \cdots, y_n)^{T}$ and 
+is trivial. Let $Y=(y_1, y_2, \cdots, y_n)^{T}$ and 
 $\beta = (\beta_0, \beta_1, \beta_2)^{T}$, the local quadratic regression fit at
 target point $x_0$ can be illustrated in terms of matrix notation:
 \begin{equation}
-y = X \beta + \epsilon
+Y = X \beta + \epsilon
 \end{equation} 
-and the objective function for a given target $x_0$ is: 
+and the minimization of objective function for a given target $x_0$ is the estimate
+of parameters. 
 \begin{equation}
 \label{weightedReg}
-\min_{\beta} \;\; (Y - X\beta)^TW(Y - X\beta)
+\hat \beta = \arg\min \;\; (Y - X\beta)^TW(Y - X\beta)
 \end{equation} 
 where
 \begin{equation}
@@ -152,30 +159,137 @@ W =
 \end{pmatrix}
 \end{equation} 
 For each target point $x_0$, we need solve the optimization problem in 
-equation~\ref{weightedReg}. 
+equation~\ref{weightedReg}. It is easy to get the estimate based on weighted
+least square:
+\begin{equation}
+\hat \beta = (X^TWX)^{-1}XWY
+\end{equation}
+and the estimate of response at $x_0$ is just the intercept of the local quadratic
+curve:
+\begin{equation}
+\hat y_0 = \hat \beta_0
+\end{equation}
+
+\subsection{Robust Locally Weighted Regression}
+
+One of shortcoming of local regression methods is its weakness to the effect of 
+outliers. In \cite{Cleveland:1979}, a robust local regression procedure was 
+proposed. First carry out the original local weighted regression fit at each 
+$x_i$, and once we got the $\hat y_i$, residuals defined as following are 
+calculated.
+\begin{equation}
+r_i = y_i - \hat y_i
+\end{equation}
+Let $B$ be the bi-square function defined as:
+\begin{equation} 
+B(\mu) =
+  \begin{cases}
+    (1 - \mu^2)^2      & \quad \text{for } \|\mu\| < 1\\
+    0  & \quad \text{for } \|\mu\| \ge 1\\
+  \end{cases}
+\end{equation}
+Let $m$ be the median of the $\|r_i\|$, and robustness weights is defined as
+\begin{equation}
+\delta_i = B\left(\frac{r_i}{6m}\right)
+\end{equation}
+Robustness weights is used to measure the outliers. If there is an outlier in 
+the data, the corresponding $r_i$ should be relatively larger than the others.
+And we definitely would like to shrink the weight of this outlier in all local
+regression fitting which includes it as neighbor. So $\delta_i$ leans to 1
+if the residuals normalized by median is small, and is closed to 0 if normalized
+residual is large. Then we compute new $\hat y_i$ for each $i$ using the same
+local quadratic model but with updated weights
+\begin{equation}
+\hat \beta = (X^TW_{update}X)^{-1}XW_{update}Y
+\end{equation}
+where
+\begin{equation}
+W_{update} =  
+\begin{pmatrix}
+  \delta_1\omega_1(x_0) & 0 & \cdots & 0 \\
+  0 & \delta_2\omega_2(x_0) & \cdots & 0 \\
+  \vdots  & \vdots & \ddots & \vdots  \\
+  0 & 0 & \cdots & \delta_n\omega_n(x_0) 
+\end{pmatrix}
+\end{equation}
+Finally we repeatedly utilize this procedure with a number of $t$ times to get
+the robust locally weighted regression fitted value $\hat y_i$. Usually, four
+iteration time is enough to get reliable and converged result.
+
+Because of its flexibility and simplicity, there are various
+application of locally weighted regression. In the next two sections, we illustrate
+two of main application of loess in different area of data analysis, time series
+and spatial analysis respectively.
+
+\subsection{Computation}
+
+The last piece of the loess method is the computation procedure. It will become
+more computationally intense to fit at every single observation in the data if 
+the size of it is keeping growing. So modification has to be applied to the 
+original loess to make the computation more feasible. 
+
+First of all, a kd-tree \cite{friedman1977algorithm} is built to partition the 
+predictor space into cells. The number of cells is decided by specifying the 
+number of observation in each cell is no more than 
+\begin{equation} 
+\lfloor\frac{n\alpha}{5}\rfloor
+\end{equation} 
+Instead of getting local weighted regression estimate at every point,
+the directly estimation is only calculated at the vertices. Derivatives of 
+$\hat y$ are also estimated at the vertices by taking the slopes of the local 
+models. And then cubic Hermite spline is used to interpolate any point within the
+corresponding cell.
+In \cite{hafen2010local}, Hafen demonstrated that the interpolated fit is very 
+close to the exact fit, but make the computation to be linear in $n$.
 
 
-\subsection{General Additive Model}
-
-\section{Geographically Weighted Regression}
-
-\section{Kriging}
 
 \section{Seasonal Trend Decomposition using Loess (STL)}
 \label{sec:stl}
-The methods and applications in this work deal with seasonal time series
-that have trends that are considered to be deterministic, which typically can be
-explained by knowledge of the nature of the process. For example, consider the
-time series of monthly maximum temperature measured at 8,125 stations all over 
-the United States from 1895 to 1997. There are two apparent trends --- one is a
-long-term increase. Another trend is the seasonal oscillation within each year.
-A major portion of this work deals with methods for modeling time series with
-deterministic seasonal and trend components.
 
-Seasonal trend decomposition using loess (STL) is a method for decomposing a time
-series into seasonal, trend, and remainder components \cite{Cleveland:1990}.
+Seasonal Trend Decomposition using Loess is first introduced by Cleveland in 
+\cite{Cleveland:1990}. It is a simple but powerful design for seasonal time
+series, which is built on a series of applications of the locally weighted 
+regression. It can also be understood as a form of general additive model utilizing
+back-fitting algorithm to iteratively update several components of the time series
+at each time point.  
 
-\subsection{STL with Added Feature}
+Compared with other seasonal adjustment methods of time series such as X-11,
+STL method does not just remove the seasonal component from the original 
+time series. It actually decomposes time series into seasonal, trend, and remainder
+components, so the property and variability of each component including seasonal 
+is able to be analyzed. 
+
+\subsection{STL Procedure}
+
+As a filtering procedure, STL is trying to decompose a time series 
+$y_i$, where $i=1, \cdots, n$, to be
+\begin{equation} 
+\label{stlModel}
+y_i = t_i + s_i + r_i
+\end{equation}
+where $t_i$, $s_i$, and $r_i$ are the trend, seasonal, and remainder components
+for $i$th time point respectively. With an pre-defined initial value of $s_i$ and 
+$t_i$ (usually set to be 0), STL starts to smooth the seasonal and trend components iteratively. The 
+seasonal component has to be determined based on a prior knowledge of the time
+series itself, which is the seasonal periodicity. For example, the dataset we will
+demonstrate in the second chapter is the about monthly maximum temperature in the
+United State. There are 12 observations in each annual period, so the $n_{(p)}$ 
+is equal to 12. If the time series is hourly temperature observation, then the
+$n_{(p)}$ is 24, and so forth.
+
+STL is comprised of two iterative procedures, an inner loop nested inside of an
+outer loop. All smoothing operation in STL are done by using loess method. The
+smoothing parameter $\alpha$ in loess is replaced by $q=\lfloor \alpha n\rfloor$.
+
+
+\subsubsection{Inner loop}
+
+\subsubsection{Outer loop}
+
+\subsection{STL with Added Feature: stlplus}
+
+\section{Geographically Weighted Regression}
 
 \section{Divide and Recombine (D\&R) for Large Complex Data}
 

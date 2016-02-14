@@ -669,6 +669,14 @@ $$
 \subsection{Spatial Imputation of Missing Value without Elevation}
 \label{sec:impute.w/o.elev}
 
+As a practical matter, for many of the infill cases, records from the previous and
+following months are not available and therefore a model that includes a temporal 
+component will not improve the estimates. Stein (1999) suggests that the
+best linear unbiased prediction at a point of interest, when using a stationary 
+model, depends on local behavior of the random field far more than on behavior at 
+locations far from the point of interest and is one justification for simplifying 
+the infilling over an irregular lattice of time and space.
+
 As the distance function is well defined, based on which we start the imputation 
 of missing value by spatial loess against to longitude and latitude. Concretely,
 the missing value in each month is imputed by its neighbors using locally weighted
