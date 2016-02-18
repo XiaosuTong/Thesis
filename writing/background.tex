@@ -417,10 +417,23 @@ In \cite{hafen2010local}, Hafen demonstrated a new implementation of STL procedu
 in R called $stlplus$ package. Compared with original $stl$ function in base R,
 it has following benefits:
 \begin{enumerate}
-
-\item local quadratic fit for seasonal and trend component
-\item the ability of handling missing value
-
+\item Enable local quadratic fit for seasonal and trend component. Based on the
+behavior of the time series, it is very likely we need local quadratic fitting
+to the smoothing procedure.
+\item Be able to handle missing value. Even though the STL procedure illustrated
+in \cite{Cleveland:1990} is able to handle missing values, the old implementation
+$stl$ function in base R cannot. $stlplus$ function now is capable to fit at
+any missing value time point.
+\item Give a theoretical lower bound for smoothing window for local quadratic fit.
+In the original STL article \cite{Cleveland:1990}, a lower bound for $w_t$, and
+$w_l$ is provided only for local linear fit. In the $stlplus$ implementation, 
+however, \cite{hafen2010local} provides theoretical lower bound for $w_t$, $w_l$ 
+when utilizing local quadratic fit for seasonal and trend smoothing.
+\item Blending endpoints to lower degree polynomial. The difficulty of smoothing 
+at the endpoints is inherent in all local regression procedures because the first 
+and last observations of the series are not smoothed with the same symmetric 
+weights that are used in the center of the series. And endpoints problem cannot be
+neglected for forecasting for future observation in time series.
 \end{enumerate}
 
 
