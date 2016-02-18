@@ -182,13 +182,14 @@ r_i = y_i - \hat y_i
 \end{equation}
 Let $B$ be the bi-square function defined as:
 \begin{equation} 
+\label{bisquare}
 B(\mu) =
   \begin{cases}
     (1 - \mu^2)^2      & \quad \text{for } \|\mu\| < 1\\
     0  & \quad \text{for } \|\mu\| \ge 1\\
   \end{cases}
 \end{equation}
-Let $m$ be the median of the $\|r_i\|$, and robustness weights is defined as
+Let $m$ be the median of the $|r_i|$, and robustness weights is defined as
 \begin{equation}
 \delta_i = B\left(\frac{r_i}{6m}\right)
 \end{equation}
@@ -313,13 +314,116 @@ procedure. Unfortunately two filtering procedure compete with each other the
 variation in the series at low frequencies. So another high-pass filtering procedure
 is applied before the trend smoothing.
 
-There are 6 steps in the inner loop in total, with
+There are mainly 5 steps in the inner loop, and these steps will be iterated for
+$n_{(I)}$ times. In each iteration time $k$, we utilize the same smoothing parameter,
+which are $w_s$ and $d_s$, to get the current estimate of seasonal component 
+$s_i^{(k)}$, and use smoothing parameter $w_t$ and $d_t$ to get the current 
+estimate of trend component $t_i^{(k)}$. Details are illustrated as following:
 
+\begin{enumerate}
+  \item $Detrending$:
+  We start with subtracting the previous estimation of trend component from the
+  $y_i$: $y_i - t_i^{(k-1)}$. If $k=1$, then we initialize $t_i^{(0)}=0$. Notice,
+  if $y_i$ is missing, the detrended series is also missed at the same time point.
+  \item $Cycle$-$subseries$ $Smoothing$:
+  A loess smoothing procedure is applied to each $subseries$ of the detrended 
+  series $y_i - t_i^{(k)}$ with smoothing window size $w_s$ and smoothing degree
+  $d_s$. Smoothed value is calculated at every time point including the time with
+  missing value, and also at the time point one prior to the first observation
+  and one after the last observation of the original subseries. Consequently,
+  all $n_{(p)}$ smoothed subseries are pulled together to be the 
+  temporal seasonal series $C_i^{(k)}$ with length of $n + 2n_{(p)}$, because we
+  extrapolated each of $n_{(p)}$ subseries with one extra fitting value on each 
+  side. $i$ is from $-n_{(p)} + 1$ to $n + n_{(p)}$.  
+  \item $Low$-$pass$ $Filtering$:
+  It seems to be reasonable to just treat $C_i^{(k)}$ as the seasonal component.
+  However, if we view the smoothing procedure which generates $c_i^{(k)}$, it
+  actually also captured low-frequency variation which truly should belong into 
+  the trend component. So a low-pass filter is applied to $c_i^{(k)}$ to capture 
+  any low-frequency variation, or any long-term trend in $c_i^{(k)}$, which we 
+  denote as $l_i^{(k)}$. Specifically, this low-pass filtering is composed of 
+  three moving average procedure with length of $n_{(p)}$, another $n_{(p)}$, and 
+  3 respectively. Since moving average drop the ending points, the length of the 
+  series is back to $n$ after them. Then a loess smoothing procedure with parameter 
+  $w_l$ and $d_l$ is applied to generate the $l_i^{(k)}$ series. Finally the 
+  seasonal component is obtained as $s_i^{(k)} = c_i^{(k)} - l_i^{(k)}$.  
+  \item $Deseasonalizing$:
+  Once the seasonal component is estimated, it is subtracted out from $y_i$. If
+  $y_i$ is missing, then $y_i - s_i^{(k)}$ is also kept as missing at corresponding
+  time point.
+  \item $Trend$ $Smoothing$:
+  The last step for inner loop is applying a loess smoothing with parameter $w_t$
+  and $d_t$ to the deseasonalized series $y_i - s_i^{(k)}$. Smoothed value is 
+  calculated at all time points including those with missing values 
+\end{enumerate}
 
+The inner loop is run $n_{(I)}$ times, and remainder is calculated based on the
+estimates of seasonal component $\hat s_i$ and trend component $\hat t_i$:
+\begin{equation} 
+\hat r_i = y_i - \hat t_i - \hat s_i
+\end{equation}
 
 \subsubsection{Outer loop}
 
-\subsection{STL with Added Feature: stlplus}
+It is very likely to have an outlier in the given time series. For example, like
+the monthly maximum temperature data in chapter two, extremely hot or cold weather 
+always exist. So similar with robust locally weighted regression mentioned 
+previously, robust weights are calculated to lessen the effect of outliers.
+
+Let $m$ be the median of the $|r_i|$, and robustness weights is defined as
+\begin{equation}
+\delta_i = B\left(\frac{r_i}{6m}\right)
+\end{equation}
+$B$ is still the bi-square function defined in \ref{bisquare}. So the weights
+for each observation used in the inner loop is now multiplied by the robustness
+factor $\delta_i$. The inner loop and robustness calculation together form the
+outer loop, and it iterates for $n_{(O)}$ times.
+
+\subsection{Smoothing Parameter of STL}
+
+Collectively, there are 8 smoothing parameters needed to be specified in STL
+procedure besides $n_{(p)}$, which are:$w_s$, $d_s$ for seasonal smoothing, 
+$w_l$, $d_l$ for the low-pass filtering procedure, $w_t$, $d_t$ for trend 
+smoothing, and iteration time $n_{(I)}$ and $n_{(O)}$. Fortunately, most of 
+smoothing parameters have very nice default value except $w_s$, $d_s$, and $w_t$.
+In the current implantation of STL in base R called $stl$ function, $d_s$ and 
+$d_t$ are restricted to be either local constant or local linear fit, is not very
+efficient for complex seasonal or trend component. It is reasonable to restrict
+$d_l$ for low-pass filter to be local linear since we absolutely do not want any
+variation with high frequency is filtered out from seasonal component. As 
+illustrated in \cite{Cleveland:1990}, by setting $w_l$ to be the least odd integer 
+greater than or equal to $n_{(p)}$ can help to preclude the competing for same
+variation between trend and seasonal component. With respect to the iteration time,
+robust fit is needed if extreme value behavior exist based on the domain knowledge
+of the data. With $n_{(I)}=1$, 5 will be a fair value for $n_{(O)}$, otherwise,
+$n_{(I)}=2$ is sufficient for non-robust fit in general.
+
+\subsubsection{Diagnostic Plots}
+
+Visualization diagnostic plots are very helpful for us to decide the value of 
+$w_s$, $d_s$, and $w_t$. For estimate of seasonal component, $s_i + r_i$ and 
+centralized $s_i$ are plotted against to time $i$ conditional on each subseries 
+which is called as $Seasonal$-$Diagnostic$ $plot$. It helps us to balance the
+bias-variance tradoff within seasonal smoothing procedure. Examples can be found
+in \cite{Cleveland:1990}.
+For estimate of trend component $\hat t_i$, $t_i + r_i$ and $t_i$ itself are 
+plotted against to time $i$. By assessing the visual graph, we can tell if too
+much variation (high variance) or very few variation (high bias) is included in
+the trend component.
+
+\subsection{STL with Added Feature in $stlplus$}
+
+In \cite{hafen2010local}, Hafen demonstrated a new implementation of STL procedure
+in R called $stlplus$ package. Compared with original $stl$ function in base R,
+it has following benefits:
+\begin{enumerate}
+
+\item local quadratic fit for seasonal and trend component
+\item the ability of handling missing value
+
+\end{enumerate}
+
+
 
 \section{Geographically Weighted Regression}
 
