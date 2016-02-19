@@ -105,6 +105,7 @@ The closer neighbors is to the $x_0$, the higher weight the neighbors will get. 
 weight is defined as a function of the distance. Specifically, a tri-cube weight 
 function is used.
 \begin{equation} 
+\label{tricube}
 T(\mu) =
   \begin{cases}
     (1 - \mu^3)^3       & \quad \text{for } 0 \le \mu < 1\\
@@ -416,6 +417,7 @@ the trend component.
 In \cite{hafen2010local}, Hafen demonstrated a new implementation of STL procedure
 in R called $stlplus$ package. Compared with original $stl$ function in base R,
 it has following benefits:
+
 \begin{enumerate}
 \item Enable local quadratic fit for seasonal and trend component. Based on the
 behavior of the time series, it is very likely we need local quadratic fitting
@@ -429,16 +431,62 @@ In the original STL article \cite{Cleveland:1990}, a lower bound for $w_t$, and
 $w_l$ is provided only for local linear fit. In the $stlplus$ implementation, 
 however, \cite{hafen2010local} provides theoretical lower bound for $w_t$, $w_l$ 
 when utilizing local quadratic fit for seasonal and trend smoothing.
-\item Blending endpoints to lower degree polynomial. The difficulty of smoothing 
-at the endpoints is inherent in all local regression procedures because the first 
-and last observations of the series are not smoothed with the same symmetric 
-weights that are used in the center of the series. And endpoints problem cannot be
-neglected for forecasting for future observation in time series.
+\item Blending endpoints to lower degree polynomial. One of the most attractive
+problem for time series analysis is forecasting the future observations. However,
+the estimate of endpoints always suffers the asymmetric weights. Blending the 
+fitting at endpoints can help to eliminate the variance of estimate
+\cite{hafen2010local}. According the empirical and theoretical analysis in 
+\cite{hafen2010local}, if the degree of smoothing procedure is 1, we blend the 
+loess at endpoints to be local constant fit with window size same as other time
+points. If the degree is 2, we blend the loess to be local constant fit with 
+window size as the next odd integer of $(w_s - 1)/2$ or $(w_t - 1)/2$. Moreover,
+a gradually blending mechanism, which controlling the degree of blending by 
+$\delta$, is also introduced in \cite{hafen2010local} to deal with all of the 
+endpoints.
 \end{enumerate}
 
-
+It has been shown in \cite{hafen2010local} that blending endpoints can be viewed
+as a shrinkage method, which reduces the mean squared error of endpoint estimates
+by sacrificing some of bias. Specifically, let $X_d$ be the design matrix for the
+local regression with degree $d$ at the right endpoint, here we omit rows that
+are outside of $w$ window of neighborhood. Then
+\begin{equation}
+X_1 =  
+\begin{pmatrix}
+  1 & 0  \\
+  1 & 1  \\
+  \vdots &  \vdots  \\
+  1 & w-2 \\
+  1 & w-1 
+\end{pmatrix}
+_{w \times 2}
+\end{equation}
+where $w$ is the window size (or span). And the weight matrix $W$ for the 
+corresponding $X_2$ is
+\begin{equation}
+W =  
+\begin{pmatrix}
+  T(0/(w-1)) & 0 & \cdots & 0 \\
+  0 & T(1/(w-1)) & \cdots & 0 \\
+  \vdots  & \vdots & \ddots & \vdots  \\
+  0 & 0 & \cdots & T((w-1)/(w-1)) 
+\end{pmatrix}
+_{w \times w}
+\end{equation}
+where $T$ is the tricube function defined in \ref{tricube}. So if we blend degree
+from 1 to 0, estimate of last observation $\hat y_n$ is
+\begin{equation}
+\hat y_n = ((1-\delta)[e_1^{T}(X_1^{T}WX_1)^{-1}X_1^{T}W] + \delta[e_1^{T}(X_0^{T}WX_0)^{-1}X_0^{T}W])y
+\end{equation}
 
 \section{Geographically Weighted Regression}
+
+Another critical application of locally weighted regression method is in the 
+spatial analysis area which called geographically weighted regression. It was first
+introduced by Fotheringham in \cite{fotheringhamgeographically}, and it is nothing
+but a local weighted regression method within two dimension spatial space.
+
+\section{Spatio-temporal Local Regression}
 
 \section{Divide and Recombine (D\&R) for Large Complex Data}
 
