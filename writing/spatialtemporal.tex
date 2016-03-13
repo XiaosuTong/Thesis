@@ -670,7 +670,7 @@ $$
 d(a,b) = r \Delta \lambda_{a,b}
 $$
 
-\subsection{Spatial Imputation of Missing Value without Elevation}
+\subsection{Spatial Smoothing without Elevation}
 \label{sec:impute.w/o.elev}
 
 As a practical matter, for many of the infill cases, records from the previous and
@@ -868,7 +868,7 @@ Consequently, we need to consider a new imputation model which includes elevatio
 one of the predictor variables, also shrink the span value to illuminate the 
 bias in the imputation.
 
-\subsection{Spatial Imputation of Missing Value with Elevation}
+\subsection{Spatial Smoothing with Elevation}
 
 As we mentioned previously, elevation should be considered to be included in the 
 local regression model. However, more thoughts should be given to the distance 
@@ -1110,7 +1110,7 @@ States.
 \end{center}
 \end{framed}
 
-Later on, these 128 stations are used in the section XXX for visualization and 
+Later on, these 512 stations are used in the section XXX for visualization and 
 diagnostics purpose.
 
 \subsubsection{The number of observation}
@@ -1208,6 +1208,13 @@ parameters in a R list object in the Global environment of the master R session,
 and then this R list will be copied onto HDFS and then copied to each mapper.
 
 \subsubsection{s.window = 21, s.degree = 2, t.window = 451, t.degree = 2}
+
+The first group of smoothing parameter we chose is considering local quadratic 
+polynomials for both seasonal and trend smoothing. The smoothing span for seasonal
+component is set to be 21 which is 44\% of the total number of observations in 
+each subseries. And smoothing span for trend component is 451, about 78\% of total
+observations.
+
 
 \subsection{Tunning Parameters of Seasonal Trend Loess}
 
