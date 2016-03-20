@@ -337,237 +337,237 @@ temperatures fall to their lowest levels in over 100 years.
 \end{center}
 \end{framed}
 
-\section{Monthly Maximum Temperature without Missing Value}
+%\section{Monthly Maximum Temperature without Missing Value}%
 
-Before we jump into the analysis of spatial and temporal dimension interactively, 
-we start our analysis with the time series analysis on each station independently.
-In this section we consider the stations without missing value, which
-there are 432 stations in total. The for visualization purpose, we randomly sample
-100 stations out of them. Their locations are shown as in Figure 
-\href{../plots/100stations.pdf}{\ref*{100stations}}. For each station, we use 
-STL (Seasonal Trend Loess) method to analysis the time series. 
-Additionally, we would like to carry out the analysis for each station in parallel. 
+%Before we jump into the analysis of spatial and temporal dimension interactively, 
+%we start our analysis with the time series analysis on each station independently.
+%In this section we consider the stations without missing value, which
+%there are 432 stations in total. The for visualization purpose, we randomly sample
+%100 stations out of them. Their locations are shown as in Figure 
+%\href{../plots/100stations.pdf}{\ref*{100stations}}. For each station, we use 
+%STL (Seasonal Trend Loess) method to analysis the time series. 
+%Additionally, we would like to carry out the analysis for each station in parallel. %
 
-\begin{framed}
-\begin{center}
-  \href{../plots/100stations.pdf}{Link to figure}
-  \captionof{figure}{The location of the 100 stations}
-  \label{100stations}
-\end{center}
-\end{framed} 
+%\begin{framed}
+%\begin{center}
+%  \href{../plots/100stations.pdf}{Link to figure}
+%  \captionof{figure}{The location of the 100 stations}
+%  \label{100stations}
+%\end{center}
+%\end{framed} %
 
-\subsection{Division by Station}
-\label{sec:divibyStation}
+%\subsection{Division by Station}
+%\label{sec:divibyStation}%
 
-In order to analyze multiple time series in parallel, we need a database or division,
-which groups observations of one station all together. And then STL method is 
-applied to each station independently. Finally, the results of decomposition from
-STL method needs to be readily presented by visualization method so that we can
-compare the results cross multiple stations. 
+%In order to analyze multiple time series in parallel, we need a database or division,
+%which groups observations of one station all together. And then STL method is 
+%applied to each station independently. Finally, the results of decomposition from
+%STL method needs to be readily presented by visualization method so that we can
+%compare the results cross multiple stations. %
 
-Fortunately, by using RHIPE, which integrates the R and Hadoop, the division by 
-station and the STL analysis on each station can be handily accomplished.
-On the one hand, R provides analysis friendly data structure and powerful 
-statistical analysis and visualization packages such as STL+, lattice package.
-On the other hand, Hadoop enables the efficient processing of divisions, such as
-subsets of division by station can be represented as key-value pairs saved on 
-HDFS. In the following, we describe in details the procedures to construct the 
-division by station database via RHIPE on a cluster of 11 servers and 242 processors.
+%Fortunately, by using RHIPE, which integrates the R and Hadoop, the division by 
+%station and the STL analysis on each station can be handily accomplished.
+%On the one hand, R provides analysis friendly data structure and powerful 
+%statistical analysis and visualization packages such as STL+, lattice package.
+%On the other hand, Hadoop enables the efficient processing of divisions, such as
+%subsets of division by station can be represented as key-value pairs saved on 
+%HDFS. In the following, we describe in details the procedures to construct the 
+%division by station database via RHIPE on a cluster of 11 servers and 242 processors.%
 
-\begin{description}
-  \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
-  \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame 
-  as the value. The value includes (1) \texttt{station.name}, the name of station, 
-  (2) \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
-  the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
-  station, (5) \texttt{year}, year of the observation, (6) \texttt{month}, month 
-  of year (January to December), (7) \texttt{tmax}, the monthly maximum temperature.
-  \item[Output] division by station in form of 432 key-value pairs, with 
-  \texttt{station.id} as the key, and R data.frame containing 1,236 observations
-  information of corresponding station as the value.
-  \item[Map]For every input key-value pair, we do not carry out any adjustment on
-  the one-row data.frame of value. But we do change the key from a vector of 
-  \texttt{station.id} and month index to \texttt{station.id} only. 
-  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are 
-  aggregated to be one data.frame. Concretely all one-row data.frame who share
-  the same station ID are shuffled and transferred to one reducer, and then R function 
-  \texttt{rbind} is called in that reducer to combine those one-row data.frame, 
-  which includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, 
-  month of year (January to December), (3) \texttt{tmax}, the monthly maximum 
-  temperature. The rest of information about the station, \texttt{station.name}, 
-  \texttt{latitude}, \texttt{longitude}, \texttt{elevation}, is save as an 
-  attributes associated with the data.frame named \texttt{location}.
-\end{description}
+%\begin{description}
+%  \item[Input] 10,042,500 key-value pairs from the initial database, with 8,125 
+%  \texttt{station.id} and 1,236 months as the key, and a one-row R data.frame 
+%  as the value. The value includes (1) \texttt{station.name}, the name of station, 
+%  (2) \texttt{longitude}, degree of longitude of the station, (3) \texttt{latitude}, 
+%  the latitude of the station, (4) \texttt{elevation}, the meter of elevation the 
+%  station, (5) \texttt{year}, year of the observation, (6) \texttt{month}, month 
+%  of year (January to December), (7) \texttt{tmax}, the monthly maximum temperature.
+%  \item[Output] division by station in form of 432 key-value pairs, with 
+%  \texttt{station.id} as the key, and R data.frame containing 1,236 observations
+%  information of corresponding station as the value.
+%  \item[Map]For every input key-value pair, we do not carry out any adjustment on
+%  the one-row data.frame of value. But we do change the key from a vector of 
+%  \texttt{station.id} and month index to \texttt{station.id} only. 
+%  \item[Reduce] 1,236 of one-row data.frame corresponding to one station are 
+%  aggregated to be one data.frame. Concretely all one-row data.frame who share
+%  the same station ID are shuffled and transferred to one reducer, and then R function 
+%  \texttt{rbind} is called in that reducer to combine those one-row data.frame, 
+%  which includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, 
+%  month of year (January to December), (3) \texttt{tmax}, the monthly maximum 
+%  temperature. The rest of information about the station, \texttt{station.name}, 
+%  \texttt{latitude}, \texttt{longitude}, \texttt{elevation}, is save as an 
+%  attributes associated with the data.frame named \texttt{location}.
+%\end{description}%
 
-\subsection{Time Series Analysis of Each Subset}
+%\subsection{Time Series Analysis of Each Subset}%
 
-After we created the database of division by station, we are ready for the parallel 
-analysis of all subsets of the database. The analysis method we apply to each station
-is Seasonal Trend Loess (SLT). Specifically, we utilize R package named stl2\cite{stl2},
-which provides several enhancements including the ability to deal with missing values 
-and higher order polynomial smoothing compared to the stl method that ships with 
-base R. Then we collect the analysis result of 100 randomly sampled stations together 
-to carry out the visualization. We detail the process of corresponding MapReduce 
-job below.
+%After we created the database of division by station, we are ready for the parallel 
+%analysis of all subsets of the database. The analysis method we apply to each station
+%is Seasonal Trend Loess (SLT). Specifically, we utilize R package named stl2\cite{stl2},
+%which provides several enhancements including the ability to deal with missing values 
+%and higher order polynomial smoothing compared to the stl method that ships with 
+%base R. Then we collect the analysis result of 100 randomly sampled stations together 
+%to carry out the visualization. We detail the process of corresponding MapReduce 
+%job below.%
 
-\begin{description}
-  \item[Input] 432 key-value pairs from the division by station database, with 432 
-  unique \texttt{station.id} as the key, and a R data.frame as the value. The value 
-  includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, month 
-  of year (January to December), (3) \texttt{tmax}, the monthly maximum temperature.
-  And an attributes named \texttt{location} encompassing \texttt{station.name},
-  \texttt{latitude}, \texttt{longitude}, and \texttt{elevation} is attached to the
-  data.frame.
-  \item[Output] One key-value pair with 1 as the key, and R data.frame with 123,600
-  rows and 11 columns, which contains \texttt{tmax}, seasonal components, trend 
-  components, and remainders, \texttt{year}, \texttt{month}, and station location 
-  information: \texttt{latitude}, \texttt{longitude}, \texttt{elevation}. 
-  \item[Map]For every input key-value pair, we first order the 1,236 observations 
-  of one station by month index from 1 to 1,236. Then we apply STL method on the 
-  time series of maximum temperature. The fitting result is also saved in a 
-  data.frame. Next, we add a new column to the data.frame which is the corresponding 
-  \texttt{station.id}. Next, we filter out key-value pairs whose key 
-  \texttt{station.id} is not belong in that 100 stations. Finally, all keys are 
-  replaced to be 1 so that fitting results of all 100 stations can be accumulated 
-  into one data.frame in the reducer. \item[Reduce] 100 intermediate key-value 
-  pairs who share the same key 1 are transfered into one reducer. In the reduce 
-  function, they are combined together by calling R function \texttt{rbind} to 
-  generate the final one data.frame. 
-\end{description}
+%\begin{description}
+%  \item[Input] 432 key-value pairs from the division by station database, with 432 
+%  unique \texttt{station.id} as the key, and a R data.frame as the value. The value 
+%  includes (1) \texttt{year}, year of the observation, (2) \texttt{month}, month 
+%  of year (January to December), (3) \texttt{tmax}, the monthly maximum temperature.
+%  And an attributes named \texttt{location} encompassing \texttt{station.name},
+%  \texttt{latitude}, \texttt{longitude}, and \texttt{elevation} is attached to the
+%  data.frame.
+%  \item[Output] One key-value pair with 1 as the key, and R data.frame with 123,600
+%  rows and 11 columns, which contains \texttt{tmax}, seasonal components, trend 
+%  components, and remainders, \texttt{year}, \texttt{month}, and station location 
+%  information: \texttt{latitude}, \texttt{longitude}, \texttt{elevation}. 
+%  \item[Map]For every input key-value pair, we first order the 1,236 observations 
+%  of one station by month index from 1 to 1,236. Then we apply STL method on the 
+%  time series of maximum temperature. The fitting result is also saved in a 
+%  data.frame. Next, we add a new column to the data.frame which is the corresponding 
+%  \texttt{station.id}. Next, we filter out key-value pairs whose key 
+%  \texttt{station.id} is not belong in that 100 stations. Finally, all keys are 
+%  replaced to be 1 so that fitting results of all 100 stations can be accumulated 
+%  into one data.frame in the reducer. \item[Reduce] 100 intermediate key-value 
+%  pairs who share the same key 1 are transfered into one reducer. In the reduce 
+%  function, they are combined together by calling R function \texttt{rbind} to 
+%  generate the final one data.frame. 
+%\end{description}%
 
-As shown in the reduce function above, a set of predefined parameter setting for 
-STL and a string vector of the 100 sampled \texttt{station.id} are passed into 
-the MapReduce job by utilizing \texttt{parameters} argument in \texttt{rhwatch} 
-function, which is used to share R objects in the Global Environment of R session 
-on the front-end server to all workers of the MapReduce job. After the fitting, 
-we would like to visually check the model validation, with same parameter setting, 
-across all different stations.
+%As shown in the reduce function above, a set of predefined parameter setting for 
+%STL and a string vector of the 100 sampled \texttt{station.id} are passed into 
+%the MapReduce job by utilizing \texttt{parameters} argument in \texttt{rhwatch} 
+%function, which is used to share R objects in the Global Environment of R session 
+%on the front-end server to all workers of the MapReduce job. After the fitting, 
+%we would like to visually check the model validation, with same parameter setting, 
+%across all different stations.%
 
-\subsubsection{First Run}
+%\subsubsection{First Run}%
 
-In the first run of parallel STL fit, we specify the parameters to be: 
-\texttt{t.window} is 495, \texttt{t.degree} is quadratic, \texttt{s.window} is 
-77, and \texttt{s.degree} is linear, \texttt{inner} is 10. The first thing we would 
-like to check about with respect to the STL fitting is comparing the fitted value 
-with the raw observations. In Figure 
-\href{../plots/100stations/first_run/fitted.100stations.tmax.pdf}
-{\ref*{firstrun.fitted.100stations}}, each page is one station. The whole time 
-series with 1,236 months for one station is chunked into 9 periods. Each of the 
-first 8 periods has 144 monthly observations, the last period has 84 monthly 
-observations. The raw observations are drawn with blue points, and the seasonal 
-component plus trend component are drawn with magenta curve.  
+%In the first run of parallel STL fit, we specify the parameters to be: 
+%\texttt{t.window} is 495, \texttt{t.degree} is quadratic, \texttt{s.window} is 
+%77, and \texttt{s.degree} is linear, \texttt{inner} is 10. The first thing we would 
+%like to check about with respect to the STL fitting is comparing the fitted value 
+%with the raw observations. In Figure 
+%\href{../plots/100stations/first_run/fitted.100stations.tmax.pdf}
+%{\ref*{firstrun.fitted.100stations}}, each page is one station. The whole time 
+%series with 1,236 months for one station is chunked into 9 periods. Each of the 
+%first 8 periods has 144 monthly observations, the last period has 84 monthly 
+%observations. The raw observations are drawn with blue points, and the seasonal 
+%component plus trend component are drawn with magenta curve.  %
 
-\begin{framed}
-\begin{center}
-  \href{../plots/100stations/first_run/fitted.100stations.tmax.pdf}{Link to figure}
-  \captionof{figure}{The fitted value vs. month}
-  \label{firstrun.fitted.100stations}
-\end{center}
-\end{framed}
+%\begin{framed}
+%\begin{center}
+%  \href{../plots/100stations/first_run/fitted.100stations.tmax.pdf}{Link to figure}
+%  \captionof{figure}{The fitted value vs. month}
+%  \label{firstrun.fitted.100stations}
+%\end{center}
+%\end{framed}%
 
-Clearly, no matter where the station is, the fitted values (seasonal+trend) are 
-very close to the true values, and also they capture the seasonal pattern in the 
-raw data. Next, we carry out the diagnostics for each components based on 
-visualization.
+%Clearly, no matter where the station is, the fitted values (seasonal+trend) are 
+%very close to the true values, and also they capture the seasonal pattern in the 
+%raw data. Next, we carry out the diagnostics for each components based on 
+%visualization.%
 
-\textbf{Trend Components}
+%\textbf{Trend Components}%
 
-In Figure \href{../plots/100stations/first_run/trend.100stations.tmax.pdf}
-{\ref*{firstrun.trend.100stations}}, the trend component is drawn against to month
-index in blue curve conditional on \texttt{station.id}. So each panel is about 
-the trend component of one station. Meanwhile, we plot with trend components 
-the moving average of yearly mean of monthly maximum temperature.
-Collectively, the same STL parameter setting still can capture the different trend
-behavior across all stations.
+%In Figure \href{../plots/100stations/first_run/trend.100stations.tmax.pdf}
+%{\ref*{firstrun.trend.100stations}}, the trend component is drawn against to month
+%index in blue curve conditional on \texttt{station.id}. So each panel is about 
+%the trend component of one station. Meanwhile, we plot with trend components 
+%the moving average of yearly mean of monthly maximum temperature.
+%Collectively, the same STL parameter setting still can capture the different trend
+%behavior across all stations.%
 
-\begin{framed}
-\begin{center}
-  \href{../plots/100stations/first_run/trend.100stations.tmax.pdf}{Link to figure}
-  \captionof{figure}{The trend components vs. month index}
-  \label{firstrun.trend.100stations}
-\end{center}
-\end{framed}
+%\begin{framed}
+%\begin{center}
+%  \href{../plots/100stations/first_run/trend.100stations.tmax.pdf}{Link to figure}
+%  \captionof{figure}{The trend components vs. month index}
+%  \label{firstrun.trend.100stations}
+%\end{center}
+%\end{framed}%
 
-\textbf{Seasonal Components}
+%\textbf{Seasonal Components}%
 
-The diagnostics plot for seasonal component is shown in Figure 
-\href{../plots/100stations/first_run/sea+remaind.month.100stations.tmax.pdf}
-{\ref*{firstrun.searemaind.100stations}}, named seasonal-diagnostics plots, which
-helps us decide how much of the variation in the data other than trend component
-should go into the seasonal component and how much into the remainder.
+%The diagnostics plot for seasonal component is shown in Figure 
+%\href{../plots/100stations/first_run/sea+remaind.month.100stations.tmax.pdf}
+%{\ref*{firstrun.searemaind.100stations}}, named seasonal-diagnostics plots, which
+%helps us decide how much of the variation in the data other than trend component
+%should go into the seasonal component and how much into the remainder.%
 
-\begin{framed}
-\begin{center}
-  \href{../plots/100stations/first_run/sea+remaind.month.100stations.tmax.pdf}
-  {Link to figure}
-  \captionof{figure}{The sum of seasonal components and remainders vs. year}
-  \label{firstrun.searemaind.100stations}
-\end{center}
-\end{framed}
+%\begin{framed}
+%\begin{center}
+%  \href{../plots/100stations/first_run/sea+remaind.month.100stations.tmax.pdf}
+%  {Link to figure}
+%  \captionof{figure}{The sum of seasonal components and remainders vs. year}
+%  \label{firstrun.searemaind.100stations}
+%\end{center}
+%\end{framed}%
 
-Seasonal component and remainders of
-one station are plotted against to year on one page conditional on month of year
-(Jan to Dec). Let $\bar S_k$ be the mean of the seasonal component for the $k$-th 
-month of year. The magenta curve in the panel for the $k$-th month of year is 
-seasonal components subtract out their mean $\bar S_k$. The blue points are seasonal
-components plus remainders for $k$-th month of year minus their mean $\bar S_k$ 
-as well. The reason for subtracting $\bar S_k$ is to center the values on each 
-panel at zero; note that the vertical scales of all panels of all stations are 
-the same so that we can graphically compare the variation of values on different 
-panels.
+%Seasonal component and remainders of
+%one station are plotted against to year on one page conditional on month of year
+%(Jan to Dec). Let $\bar S_k$ be the mean of the seasonal component for the $k$-th 
+%month of year. The magenta curve in the panel for the $k$-th month of year is 
+%seasonal components subtract out their mean $\bar S_k$. The blue points are seasonal
+%components plus remainders for $k$-th month of year minus their mean $\bar S_k$ 
+%as well. The reason for subtracting $\bar S_k$ is to center the values on each 
+%panel at zero; note that the vertical scales of all panels of all stations are 
+%the same so that we can graphically compare the variation of values on different 
+%panels.%
 
-\textbf{Remainders}
+%\textbf{Remainders}%
 
-The first figure about remainder is shown in Figure 
-\href{../plots/100stations/first_run/remainder.month.100stations.tmax.pdf}
-{\ref*{firstrun.remaind.100stations}}. Remainder of each station is graphed against
-to year conditional on month of year. Also a loess smoothing curve with span equal
-to 0.75 is plotted for each month of year. A flat loess smoothing line represents
-the seasonal component does capture reasonable amount of variation in each 
-sub-series.
+%The first figure about remainder is shown in Figure 
+%\href{../plots/100stations/first_run/remainder.month.100stations.tmax.pdf}
+%{\ref*{firstrun.remaind.100stations}}. Remainder of each station is graphed against
+%to year conditional on month of year. Also a loess smoothing curve with span equal
+%to 0.75 is plotted for each month of year. A flat loess smoothing line represents
+%the seasonal component does capture reasonable amount of variation in each 
+%sub-series.%
 
-\begin{framed}
-\begin{center}
-  \href{../plots/100stations/first_run/remainder.month.100stations.tmax.pdf}
-  {Link to figure}
-  \captionof{figure}{The remainders vs. year}
-  \label{firstrun.remaind.100stations}
-\end{center}
-\end{framed}
+%\begin{framed}
+%\begin{center}
+%  \href{../plots/100stations/first_run/remainder.month.100stations.tmax.pdf}
+%  {Link to figure}
+%  \captionof{figure}{The remainders vs. year}
+%  \label{firstrun.remaind.100stations}
+%\end{center}
+%\end{framed}%
 
-\begin{framed}
-\begin{center}
-  \href{../plots/100stations/first_run/QQ.remainder.100stations.tmax.pdf}
-  {Link to figure}
-  \captionof{figure}{The normal quantiles of remainders}
-  \label{firstrun.QQremaind.100stations}
-\end{center}
-\end{framed}
+%\begin{framed}
+%\begin{center}
+%  \href{../plots/100stations/first_run/QQ.remainder.100stations.tmax.pdf}
+%  {Link to figure}
+%  \captionof{figure}{The normal quantiles of remainders}
+%  \label{firstrun.QQremaind.100stations}
+%\end{center}
+%\end{framed}%
 
-\begin{framed}
-\begin{center}
-  \href{../plots/100stations/first_run/remainder.acf.100stations.tmax.pdf}
-  {Link to figure}
-  \captionof{figure}{Autocorrelation functions for remainder term}
-  \label{firstrun.remaindacf.100stations}
-\end{center}
-\end{framed}
+%\begin{framed}
+%\begin{center}
+%  \href{../plots/100stations/first_run/remainder.acf.100stations.tmax.pdf}
+%  {Link to figure}
+%  \captionof{figure}{Autocorrelation functions for remainder term}
+%  \label{firstrun.remaindacf.100stations}
+%\end{center}
+%\end{framed}%
 
-As in Figure 
-\href{../plots/100stations/first_run/remainder.acf.100stations.tmax.pdf}
-{\ref*{firstrun.remaindacf.100stations}},
-although there are a few slightly significant autocorrelation estimates for some
-of stations, surprisingly the overall behavior is indicative of independence.
+%As in Figure 
+%\href{../plots/100stations/first_run/remainder.acf.100stations.tmax.pdf}
+%{\ref*{firstrun.remaindacf.100stations}},
+%although there are a few slightly significant autocorrelation estimates for some
+%of stations, surprisingly the overall behavior is indicative of independence.%
+%
 
+%\subsubsection{Second Run}%
 
-\subsubsection{Second Run}
-
-In the first run of parallel STL fit, we specify that parameters to be: 
-\texttt{t.window} is 495, \texttt{t.degree} is quadratic, \texttt{s.window} is 
-77, and \texttt{s.degree} is linear, \texttt{inner} is 10. However we randomly 
-sample another 100 stations to be in our visualization checking because we would 
-like to see if parallel STL fitting is robust cross different parameter setting 
-and different locations.
+%In the first run of parallel STL fit, we specify that parameters to be: 
+%\texttt{t.window} is 495, \texttt{t.degree} is quadratic, \texttt{s.window} is 
+%77, and \texttt{s.degree} is linear, \texttt{inner} is 10. However we randomly 
+%sample another 100 stations to be in our visualization checking because we would 
+%like to see if parallel STL fitting is robust cross different parameter setting 
+%and different locations.
 
 
 \section{Monthly Maximum Temperature after 1950}
@@ -1090,7 +1090,7 @@ illustrate which cell the station comes from.
 \begin{framed}
 \begin{center}
   \href{../plots/vertices.a1950.pdf}{Link to figure}
-  \captionof{figure}{The location of 128 stations sampled from each cell of a kd-tree}
+  \captionof{figure}{The location of 512 stations sampled from each cell of a kd-tree}
   \label{a1950.vertices}
 \end{center}
 \end{framed}
@@ -1208,16 +1208,60 @@ all stations. RHIPE implements this in a way that we define these smoothing
 parameters in a R list object in the Global environment of the master R session,
 and then this R list will be copied onto HDFS and then copied to each mapper.
 
-\subsubsection{s.window = 21, s.degree = 2, t.window = 451, t.degree = 2}
+\subsubsection{s.window = 21, s.degree = 1, t.window = 231, t.degree = 2}
 
 The first group of smoothing parameter we chose is considering local quadratic 
-polynomials for both seasonal and trend smoothing. The smoothing span for seasonal
+polynomials for both seasonal and trend components. The smoothing span for seasonal
 component is set to be 21 which is 44\% of the total number of observations in 
 each subseries. And smoothing span for trend component is 451, about 78\% of total
-observations.
+observations. Meanwhile we set the iteration time of inner loop to be 4 and 
+outer loop to be 1. The fit is evaluated using diagnostic visualization methods
+as following. 
 
+The first visualization display demonstrates the fitted value against month. In 
+Figure \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.stlraw.vs.time.pdf}
+{\ref*{a1950.fitted.vs.time}}, each page is one of the 512 sampled stations. The 
+whole time series with 576 time points for each station is chunked into 6 visual 
+panels, each of which has 108 observations. The spatial imputed values are drawn 
+with blue points, and the seasonal component plus trend component are drawn with
+magenta curve.  
 
-\subsection{Tunning Parameters of Seasonal Trend Loess}
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.stlraw.vs.time.pdf}
+  {Link to figure}
+  \captionof{figure}{The fitted value vs. month}
+  \label{a1950.fitted.vs.time}
+\end{center}
+\end{framed}
+
+Collectively, no matter where the station is, the temporally fitted value 
+(seasonal+trend) can capture the temporal pattern of each station, especially the
+temporal seasonality. Next, we carry out the diagnostics for each components based on corresponding diagnostic plots.
+
+Figure \href{}{\ref*{}} is called $seasonal$ $fitted$ $values$ $plot$, in which
+seasonal plus remainder component with mean of seasonal subtracted is drawn 
+against to year. 
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.stlraw.vs.time.pdf}
+  {Link to figure}
+  \captionof{figure}{The fitted value vs. month}
+  \label{a1950.searemainder.vs.year}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.stlraw.vs.time.pdf}
+  {Link to figure}
+  \captionof{figure}{The fitted value vs. month}
+  \label{a1950.reaminder.vs.year}
+\end{center}
+\end{framed}
+
+\subsection{Tuning Parameters of Seasonal Trend Loess}
 
 In order to decompose the trend and seasonal components from each observation, we 
 fit \texttt{stlplus} on the time series of each station independently. However,
