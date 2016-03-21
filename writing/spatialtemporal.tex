@@ -1237,29 +1237,37 @@ magenta curve.
 
 Collectively, no matter where the station is, the temporally fitted value 
 (seasonal+trend) can capture the temporal pattern of each station, especially the
-temporal seasonality. Next, we carry out the diagnostics for each components based on corresponding diagnostic plots.
+temporal seasonality. Next, we carry out the diagnostics for each components 
+based on corresponding diagnostic plots.
 
-Figure \href{}{\ref*{}} is called $seasonal$ $fitted$ $values$ $plot$, in which
-seasonal plus remainder component with mean of seasonal subtracted is drawn 
-against to year. 
+Figure 
+\href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.searemainder.vs.year.pdf}
+{\ref*{a1950.searemainder.vs.year}} is called $seasonal$ $fitted$ $values$ $plot$
+\cite{hafen2010local}, in which seasonal plus remainder component with mean of 
+seasonal subtracted is drawn against to year. A magenta curve of centralized 
+seasonal component is superposed on each panel. Also as shown in Figure
+\href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.remainder.vs.year.pdf}
+{\ref*{a1950.remainder.vs.year}}, the remainder is plotted in $seasonal$ 
+$residual$ $plot$ against to year with a superposed loess smoothing line.
 
 \begin{framed}
 \begin{center}
-  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.stlraw.vs.time.pdf}
+  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.searemainder.vs.year.pdf}
   {Link to figure}
-  \captionof{figure}{The fitted value vs. month}
+  \captionof{figure}{The seasonal fitted values vs. year}
   \label{a1950.searemainder.vs.year}
 \end{center}
 \end{framed}
 
 \begin{framed}
 \begin{center}
-  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.stlraw.vs.time.pdf}
+  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.remainder.vs.year.pdf}
   {Link to figure}
-  \captionof{figure}{The fitted value vs. month}
-  \label{a1950.reaminder.vs.year}
+  \captionof{figure}{The seasonal residual vs. year}
+  \label{a1950.remainder.vs.year}
 \end{center}
 \end{framed}
+
 
 \subsection{Tuning Parameters of Seasonal Trend Loess}
 
