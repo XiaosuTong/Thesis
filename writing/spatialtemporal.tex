@@ -1210,8 +1210,9 @@ and then this R list will be copied onto HDFS and then copied to each mapper.
 
 \subsubsection{s.window = 21, s.degree = 1, t.window = 231, t.degree = 2}
 
-The first group of smoothing parameter we chose is considering local quadratic 
-polynomials for both seasonal and trend components. The smoothing span for seasonal
+The first group of smoothing parameter we chose is considering local linear 
+fitting for seasonal component, but local quadratic polynomials for trend 
+components. The smoothing span for seasonal
 component is set to be 21 which is 44\% of the total number of observations in 
 each subseries. And smoothing span for trend component is 451, about 78\% of total
 observations. Meanwhile we set the iteration time of inner loop to be 4 and 
@@ -1245,10 +1246,10 @@ Figure
 {\ref*{a1950.searemainder.vs.year}} is called $seasonal$ $fitted$ $values$ $plot$
 \cite{hafen2010local}, in which seasonal plus remainder component with mean of 
 seasonal subtracted is drawn against to year. A magenta curve of centralized 
-seasonal component is superposed on each panel. Also as shown in Figure
-\href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.remainder.vs.year.pdf}
-{\ref*{a1950.remainder.vs.year}}, the remainder is plotted in $seasonal$ 
-$residual$ $plot$ against to year with a superposed loess smoothing line.
+seasonal component is superposed on each panel. The reason for subtracting the 
+mean is to center the values on each panel at zero; note that the vertical scales 
+of all panels of all stations are the same so that we can graphically compare the 
+variation of values on different panels.
 
 \begin{framed}
 \begin{center}
@@ -1259,6 +1260,20 @@ $residual$ $plot$ against to year with a superposed loess smoothing line.
 \end{center}
 \end{framed}
 
+It is noticeable that a larger smoothing window of seasonal component might be 
+considered since too much variation is included in the seasonal component as
+shown in Figure 
+\href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.searemainder.vs.year.pdf}
+{\ref*{a1950.searemainder.vs.year}}. 
+Also as shown in Figure
+\href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.remainder.vs.year.pdf}
+{\ref*{a1950.remainder.vs.year}}, the remainder is plotted in $seasonal$ 
+$residual$ $plot$ \cite{hafen2010local} against to year with a superposed loess 
+smoothing line. The loess smoothing line here can be helpful to judge the lack
+of fit for the seasonal component. Clearly, there is not any lack of fit problem
+left in the remainder over all stations since loess smoothing line are all around
+horizontal line at zero.
+
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.remainder.vs.year.pdf}
@@ -1267,6 +1282,65 @@ $residual$ $plot$ against to year with a superposed loess smoothing line.
   \label{a1950.remainder.vs.year}
 \end{center}
 \end{framed}
+
+
+In Figure \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.trend.vs.time.pdf}
+{\ref*{a1950.trend}}, the trend component of one station is drawn against to 
+month in blue curve in each panel. In order to optimize the perception of the 
+trend curve, we include 12 panels on one page, which follows the 45 degree banking
+rule \cite{clevelandvisualizing}. However this sacrifices the room in each panel
+which make the visual assessing of trend component harder if including all 
+remainder of each station in corresponding panel. So instead of superposing the
+remainder on each panel, the moving average of yearly mean of monthly 
+maximum temperature is superposed on each panel as magenta points, which can 
+help in judging the bias-variance trade-off of trend fitting.
+Collectively, the same $stlplus$ parameter setting still can capture the different
+trend behavior across all different stations, while a larger span window or lower
+degree polynomial may be considered for trend smoothing since too much variation
+has been captured by trend.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.trend.vs.time.pdf}
+  {Link to figure}
+  \captionof{figure}{The trend components vs. month}
+  \label{a1950.trend}
+\end{center}
+\end{framed}
+
+Remainder against to month is plotted for each station with a loess smoothing 
+line superposed on each page in Figure 
+\href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.remainder.vs.time.pdf}
+{\ref*{a1950.remainder}}. This diagnostic plot can help us to assess lack of fit
+or if there is any pattern left in remainder. Notably loess smoothing line in 
+magenta color of each station is flat and close to horizontal reference line at 
+zero.  
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t231td2_s21sd1_ffd/a1950.remainder.vs.time.pdf}
+  {Link to figure}
+  \captionof{figure}{The remainder vs. month}
+  \label{a1950.remainder}
+\end{center}
+\end{framed}
+
+Consequently, we observed high-variance estimate for both seasonal and trend
+component with current smoothing parameters of $stlplus$. In the next fitting, we
+consider a larger smoothing span with lower polynomial degree to eliminate extra
+variation captured in seasonal and trend components. 
+
+\subsubsection{s.window = 41, s.degree = 1, t.window = 241, t.degree = 1}
+
+
+
+
+
+
+
+
+
+
 
 
 \subsection{Tuning Parameters of Seasonal Trend Loess}
