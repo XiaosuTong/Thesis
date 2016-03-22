@@ -1335,22 +1335,47 @@ variation captured in seasonal and trend components.
 Now local linear fitting is considered for both seasonal and trend components. 
 Smoothing span for seasonal component is enlarged to 41, and smoothing span for 
 trend component is kept at 241. Similarly we assess the smoothing fitting of two
-component by visually diagnostic plots.
+component by visually diagnostic plots with the remainder.
 
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.stlraw.vs.time.pdf}
   {Link to figure}
   \captionof{figure}{The fitted value vs. month}
-  \label{a1950.fitted.vs.time}
+  \label{a1950.fitted.vs.time2}
 \end{center}
 \end{framed}
 
+As shown in Figure
+\href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.stlraw.vs.time.pdf}
+{\ref*{a1950.fitted.vs.time2}}, $stlplus$ fitted value as magenta line with 
+superposed spatial smoothed input value as blue points. Collectively, the temporal
+fitted value captures the seasonal and overall trend in each time series of 
+different stations. Some of stations in California, such as stations with ID 
+$047905$ and $047807$, they are located in the coast region and do not have very
+strictly seasonality compared with other regions. So the difference between the
+valley and peak of temporal fitted value is much smaller than other stations.
 
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.searemainder.vs.year.pdf}
+  {Link to figure}
+  \captionof{figure}{The seasonal fitted values vs. year}
+  \label{a1950.searemainder.vs.year2}
+\end{center}
+\end{framed}
 
-
-
-
+In Figure 
+\href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.searemainder.vs.year.pdf}
+{\ref*{a1950.searemainder.vs.year2}}, centralized seasonal plus remainder 
+component is drawn against to year as blue points, centralized seasonal component
+is superposed as magenta curve as before. Appropriate amount of variation is 
+filtered out from the seasonal component. We also notice that seasonal component
+of maximum temperature kept increasing over time for March consistently and 
+decreasing for October over majority of locations. In the Summer months, the 
+corresponding seasonal component is collectively flat over all locations except 
+the west coast region in California State, which have very unique and different
+seasonality behavior than other locations.
 
 
 
