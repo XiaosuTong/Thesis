@@ -1377,6 +1377,44 @@ corresponding seasonal component is collectively flat over all locations except
 the west coast region in California State, which have very unique and different
 seasonality behavior than other locations.
 
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.remainder.vs.year.pdf}
+  {Link to figure}
+  \captionof{figure}{The seasonal residual vs. year}
+  \label{a1950.remainder.vs.year2}
+\end{center}
+\end{framed}
+
+Even though the span window is enlarged to eliminate variation captured by 
+seasonal smoothing, lack of fit does not exist. According to Figure 
+\href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.remainder.vs.year.pdf}
+{\ref*{a1950.remainder.vs.year2}}, the loess smoothing line of remainder
+superposed in each month is still roughly flat and around horizontal zero line.
+
+Besides the seasonal diagnostic plots, the Figure 
+\href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.trend.vs.time.pdf}
+{\ref*{a1950.trend2}} demonstrates the estimated trend component against to month
+of one station in each panel. The integer index for each panel indicates the cell
+of kd-tree (as shown in Figure \href{../plots/vertices.a1950.pdf}
+{\ref*{a1950.vertices}}) in which the station is locating.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.trend.vs.time.pdf}
+  {Link to figure}
+  \captionof{figure}{The trend components vs. month}
+  \label{a1950.trend2}
+\end{center}
+\end{framed}
+
+
+
+
+
+
+
+
 
 
 \subsection{Tuning Parameters of Seasonal Trend Loess}
