@@ -11,9 +11,38 @@ group of tunning parameters are user-tunable MapReduce tunning parameters. Withi
 this chapter, we illustrate a full factorial experiment to study the affect of
 these system tunning parameters to the modeling.
 
-\section{Experiment Design}
+\section{Modeling Routine}
 
+The raw text data files as mentioned in section~\ref{sec:Download}, which is 
+sitting on HDFS, is first merged into one text file, and then
 The whole analysis routine consist of six MapReduce jobs, which are 
+
+\begin{itemize}
+\item MapReduce job for reading in
+
+Within this MapReduce job, the duplicated raw text data file is read in as input. 
+By month division is generated from this MapReduce job. The value of each output 
+key-value pair is a matrix with 2 columns and 7,738 rows each of which represents
+the maximum temperature and id of one station for a given month, and the key is
+the corresponding month index.   
+\begin{description}
+  \item[Input] Integers from 1 to 103. There is no real input files feed into this
+  MapReduce job. Instead, we simulate the key of input key-value pairs to be
+  sequence of integer from 1 to 103 which is exactly the number of data set files. 
+  Each of them is passed to one Mapper. 
+  \item[Output] 
+  \item[Map]  
+  \item[Reduce] 
+\end{description}
+
+
+
+\item MapReduce job for spatial fitting of maximum temperature
+\item MapReduce job for swapping from by time division to by location division
+\item MapReduce job for temporal fitting  
+\item MapReduce job for swapping from by location division to by time division
+\item MapReduce job for spatial fitting of remainder
+\end{itemize}
 
 readin, spatial-fit, swaptoLoc, stlplus-fit, swaptoTime, spatial-fit
 
@@ -39,3 +68,39 @@ time division is read in, and observations of all locations in each month is one
 input key-value pair, then 7,738 intermediate key-value pairs is created with each
 location ID as key in the Map function of $swap$-$to$-$location$ MapReduce job.
 Then the output of Map function is first written to local disk of nodes 
+
+\section{Experiment Design}
+
+\subsection{Hadoop User Tuning Parameters}
+
+\begin{itemize}
+\item \texttt{mapreduce.task.io.sort.mb}
+
+\item \texttt{mapreduce.map.sort.spill.percent}
+
+\item \texttt{mapreduce.reduce.shuffle.parallelcopies}
+
+\item \texttt{mapreduce.task.io.sort.factor}
+
+\item \texttt{mapreduce.reduce.shuffle.merge.percent}
+
+\item \texttt{mapreduce.reduce.merge.inmem.threshold}
+
+\item \texttt{mapreduce.reduce.input.buffer.percent}
+
+\item \texttt{mapreduce.reduce.shuffle.input.buffer.percent}
+
+\item \texttt{mapreduce.job.reduce.slowstart.completedmaps}
+
+\end{itemize}
+
+
+\subsection{Model User Tunning Parameters}
+
+
+\section{\texttt{drSpaceTime} Package}
+
+\texttt{drSpaceTime} is a R package for spatial temporal analysis using divide 
+and recombined concept. It is highly depends on three exist R packages: 
+\texttt{Rhipe}, \texttt{stlplus}, and \texttt{Spaloess}, which are all open 
+source and available on Github \cite{github}.

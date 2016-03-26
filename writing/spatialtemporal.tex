@@ -1209,6 +1209,7 @@ parameters in a R list object in the Global environment of the master R session,
 and then this R list will be copied onto HDFS and then copied to each mapper.
 
 \subsubsection{s.window = 21, s.degree = 1, t.window = 231, t.degree = 2}
+\label{stlplus1}
 
 The first group of smoothing parameter we chose is considering local linear 
 fitting for seasonal component, but local quadratic polynomials for trend 
@@ -1328,7 +1329,7 @@ zero.
 Consequently, we observed high-variance estimate for both seasonal and trend
 component with current smoothing parameters of $stlplus$. In the next fitting, we
 consider a larger smoothing span with lower polynomial degree to eliminate extra
-variation captured in seasonal and trend components. 
+variation captured in these two components. 
 
 \subsubsection{s.window = 41, s.degree = 1, t.window = 241, t.degree = 1}
 
@@ -1397,7 +1398,12 @@ Besides the seasonal diagnostic plots, the Figure
 {\ref*{a1950.trend2}} demonstrates the estimated trend component against to month
 of one station in each panel. The integer index for each panel indicates the cell
 of kd-tree (as shown in Figure \href{../plots/vertices.a1950.pdf}
-{\ref*{a1950.vertices}}) in which the station is locating.
+{\ref*{a1950.vertices}}) in which the station is locating. Compared with estimated
+trend component shown in previous subsection, more variation has been filtered 
+out from the trend component. Same smoothing parameter collectively captured 
+various pattern of trend at different locations. But it is interesting to notice
+that stations closed to each other do have similar pattern of trend.
+
 
 \begin{framed}
 \begin{center}
@@ -1407,6 +1413,31 @@ of kd-tree (as shown in Figure \href{../plots/vertices.a1950.pdf}
   \label{a1950.trend2}
 \end{center}
 \end{framed}
+
+Still, the remainder of station is drawn against to month with superposed loess
+smoothing line one each page of the following Figure~
+\href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.remainder.vs.time.pdf}
+{\ref*{a1950.remainder2}}. The flat loess smoothing line around horizontal zero
+reference line indicates that there is not sever lack of fit issue for the trend
+estimate with a wider smoothing span and lower smoothing degree.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/stlplus/t241td1_s41sd1_ffd/a1950.remainder.vs.time.pdf}
+  {Link to figure}
+  \captionof{figure}{The remainder vs. month}
+  \label{a1950.remainder2}
+\end{center}
+\end{framed}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2290,7 +2321,7 @@ local linear and quadratic fit.
 In summary, we varied the s.window, s.degree, t.window, and t.degree four factors
 to find the best prediction stlplus model with respect to the prediction error.
 
-\subsection{Spatial Decomposition}
+\subsection{Spatial Decomposition with \texttt{Spaloess}}
 \label{sec:a1950.spafit}
 
 As we introduced in section XXX, \texttt{stlplus} is a very powerful procedure
