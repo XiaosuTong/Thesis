@@ -14,27 +14,41 @@ these system tunning parameters to the modeling.
 \section{Modeling Routine}
 
 The raw text data files as mentioned in section~\ref{sec:Download}, which is 
-sitting on HDFS, is first merged into one text file, and then
-The whole analysis routine consist of six MapReduce jobs, which are 
+sitting on HDFS, is first merged into one text file, and then duplicated by
+year. Specifically, the time series of monthly maximum temperature of each station
+is replicated based on original 48 years observations to include $2^{18}$ years 
+which is $3,145,728$ monthly observations. 
+The total size of the text data file is 386 GB which includes monthly maximum
+temperature observation over $3,145,728$ months at 7,738 different locations.
+
+The whole analysis routine consist of six MapReduce jobs, which are listing as
+following in order:
 
 \begin{itemize}
-\item MapReduce job for reading in
-
-Within this MapReduce job, the duplicated raw text data file is read in as input. 
-By month division is generated from this MapReduce job. The value of each output 
-key-value pair is a matrix with 2 columns and 7,738 rows each of which represents
-the maximum temperature and id of one station for a given month, and the key is
-the corresponding month index.   
+\item Reading in
 \begin{description}
-  \item[Input] Integers from 1 to 103. There is no real input files feed into this
-  MapReduce job. Instead, we simulate the key of input key-value pairs to be
-  sequence of integer from 1 to 103 which is exactly the number of data set files. 
-  Each of them is passed to one Mapper. 
-  \item[Output] 
-  \item[Map]  
-  \item[Reduce] 
+  \item[Input] The duplicated raw text data file on HDFS is read in as input. Each
+  row is read in as a key-value pair. The key is a unique row index, and value
+  is the corresponding string in that row. 
+  \item[Output] The value of each output key-value pair is a matrix with dimension
+  7,738 by 2. Each row represents the maximum temperature and station id of one 
+  location for a given month, and the key is the corresponding month index varies 
+  from 1 to $3,145,728$. 
+  \item[Map] Every block of the raw text data saved on HDFS is sent to one of 
+  mapper with each row as one of input key-value pairs. By calling the R function
+  \texttt{strsplit}, each filed of the row string is split apart. Since each
+  row contains 12 monthly maximum temperature of a given year at a given location,
+  we generate a intermediate key-value pair for each of them for all locations
+  and all years. The key of 
+  intermediate key-value pairs is the month index of corresponding row, and the 
+  value is a vector with station id and maximum temperature.
+  \item[Reduce] All intermediate key-value pairs that share the same month index
+  are shuffled and sent to one Reducer. By calling R function \texttt{rbind}, 
+  all intermediate values are row binded into one matrix with dimension of 7,738
+  by 2.
 \end{description}
 
+In the Reading in MapReduce job
 
 
 \item MapReduce job for spatial fitting of maximum temperature
