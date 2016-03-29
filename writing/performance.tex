@@ -174,7 +174,12 @@ turn will hurt the job performance.
 \item \texttt{mapreduce.job.reduce.slowstart.completedmaps}\\
 The parameter controls when Reducers should be launched. Specifically, it specifies
 the fraction of the number of Mappers which should be complete before Reducers
-are scheduled for the job.
+are scheduled for the job. Under MapReduce2 (YARN) framework, this parameter
+becomes critical if the Map of MapReduce job is time consuming. Setting this 
+parameter to be a low value as default, which is 0.05, can start the Reducers
+doing nothing but waiting for the output from Mappers. However this waist several
+containers assigned for Reducers without doing anything instead of assigning them
+to the Mappers under pending statues.   
 
 \item \texttt{mapreduce.reduce.shuffle.parallelcopies}\\
 After the map step is finished, the intermediate key-value pairs are partitioned
