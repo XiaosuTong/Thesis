@@ -171,9 +171,20 @@ total heap size of JVM will leave limited memory usage for other processes spons
 by the JVM, and indeed will force JVM to involve more garbage clean, which in 
 turn will hurt the job performance.    
 
+\item \texttt{mapreduce.job.reduce.slowstart.completedmaps}\\
+The parameter controls when Reducers should be launched. Specifically, it specifies
+the fraction of the number of Mappers which should be complete before Reducers
+are scheduled for the job.
+
 \item \texttt{mapreduce.reduce.shuffle.parallelcopies}\\
 After the map step is finished, the intermediate key-value pairs are partitioned
-and sitting on the local disk of the node where Mapper ran. Then 
+and sitting on the local disk of the node where Mapper ran. Then each Reducer 
+the corresponding partition from all Mapper outputs through the network. And
+actually each Reducer evokes a number of copy threads, which controlled by this
+parameter, to fetch the intermediate output of Mapper in parallel. This parameter
+should be set wisely. Too large value of copy threads will waste for the CPU,
+but too small number of copy threads will slow down the copy step of Reducer.
+The default value is 5.
 
 
 
