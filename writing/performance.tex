@@ -191,7 +191,9 @@ should be set wisely. Too large value of copy threads will waste for the CPU,
 but too small number of copy threads will slow down the copy step of Reducer.
 The default value is 5.
 
-
+\item \texttt{mapreduce.reduce.shuffle.input.buffer.percent}\\
+During the copying stage, the output of Map is copied to the heap space of 
+Reducer's JVM.
 
 
 \item \texttt{mapreduce.task.io.sort.factor}
@@ -202,7 +204,7 @@ The default value is 5.
 
 \item \texttt{mapreduce.reduce.input.buffer.percent}
 
-\item \texttt{mapreduce.reduce.shuffle.input.buffer.percent}
+
 
 \item \texttt{mapreduce.job.reduce.slowstart.completedmaps}
 
