@@ -143,9 +143,8 @@ readin, spatial-fit, swaptoLoc, stlplus-fit, swaptoTime, spatial-fit
 
 \subsection{Hadoop User Tuning Parameters}
 
-\begin{itemize}
+\subsubsection{\texttt{mapreduce.task.io.sort.mb}}
 
-\item \texttt{mapreduce.task.io.sort.mb} \\
 This parameter controls the size of memory buffer, in megabytes, which is used 
 to hold the map output in each Mapper. The value for it is integer varies from 1 
 to 2047. The default value for this parameter is 100, which only allocates 100MB
@@ -153,7 +152,8 @@ of memory from heap size of JVM for saving map output. It is quite small in
 general. For jobs like reading in and swapping, it is definitely worth to increase
 the value of this parameter to give more memory for holding output of each Mapper.
 
-\item \texttt{mapreduce.map.sort.spill.percent}\\
+\subsubsection{\texttt{mapreduce.map.sort.spill.percent}}
+
 This parameter works with \texttt{mapreduce.task.io.sort.mb} collectively to 
 control the memory used for holding map output. Concretely, a circular memory 
 buffer is allocated for each mapper to write intermediate output to. When the 
@@ -171,7 +171,8 @@ total heap size of JVM will leave limited memory usage for other processes spons
 by the JVM, and indeed will force JVM to involve more garbage clean, which in 
 turn will hurt the job performance.    
 
-\item \texttt{mapreduce.job.reduce.slowstart.completedmaps}\\
+\subsubsection{\texttt{mapreduce.job.reduce.slowstart.completedmaps}}
+
 The parameter controls when Reducers should be launched. Specifically, it specifies
 the fraction of the number of Mappers which should be complete before Reducers
 are scheduled for the job. Under MapReduce2 (YARN) framework, this parameter
@@ -181,7 +182,8 @@ doing nothing but waiting for the output from Mappers. However this waist severa
 containers assigned for Reducers without doing anything instead of assigning them
 to the Mappers under pending statues.   
 
-\item \texttt{mapreduce.reduce.shuffle.parallelcopies}\\
+\subsubsection{\texttt{mapreduce.reduce.shuffle.parallelcopies}}
+
 After the map step is finished, the intermediate key-value pairs are partitioned
 and sitting on the local disk of the node where Mapper ran. Then each Reducer 
 the corresponding partition from all Mapper outputs through the network. And
@@ -191,24 +193,34 @@ should be set wisely. Too large value of copy threads will waste for the CPU,
 but too small number of copy threads will slow down the copy step of Reducer.
 The default value is 5.
 
-\item \texttt{mapreduce.reduce.shuffle.input.buffer.percent}\\
-During the copying stage, the output of Map is copied to the heap space of 
-Reducer's JVM.
+\subsubsection{\texttt{mapreduce.reduce.shuffle.input.buffer.percent}}
 
+During the copying stage, the output of Map is copied to part of the total heap 
+space of Reducer's JVM. This parameter controls how large the proportion is.
+The default value of this parameter is 0.7. Suppose the total heap size of the
+JVM of Reducer is 4GB, then 2.8 GB of JVM's memory is used for holding the output
+copied from the local disk of nodes ran Mappers.
 
-\item \texttt{mapreduce.task.io.sort.factor}
+\subsubsection{\texttt{mapreduce.reduce.shuffle.merge.percent}}
 
-\item \texttt{mapreduce.reduce.shuffle.merge.percent}
+Similar with the Mapper, there is also a spilling mechanism to avoid memory 
+overflow. Specifically, the Map output is consistently copied to the proportion 
+of heap space specified by \texttt{mapreduce.reduce.shuffle.input.buffer.percent}.
+Once the contents in the memory buffer reaches threshold controlled by two 
+parameters collectively, the intermediate output or the input to Reduce is spilled 
+to local disk of the node which runs the Reduce. One of the two parameters is \\
+\texttt{mapreduce.reduce.shuffle.merge.percent} which controls the threshold in 
+term of percent of buffer size. If the size of buffer size is occupied over this
+proportion, spilling to disk will be triggered. By default, this is set to be 
+0.66. Another controlling parameter is the 
+\texttt{mapreduce.reduce.merge.inmem.threshold}.
 
-\item \texttt{mapreduce.reduce.merge.inmem.threshold}
+\subsubsection{\texttt{mapreduce.reduce.merge.inmem.threshold}}
 
-\item \texttt{mapreduce.reduce.input.buffer.percent}
+\subsubsection{\texttt{mapreduce.task.io.sort.factor}}
 
+\subsubsection{\texttt{mapreduce.reduce.input.buffer.percent}}
 
-
-\item \texttt{mapreduce.job.reduce.slowstart.completedmaps}
-
-\end{itemize}
 
 
 \subsection{Model User Tunning Parameters}
