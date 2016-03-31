@@ -45,10 +45,10 @@ The first MapReduce job in the modeling routine is the Reading in job.
 The raw text data files as mentioned in section~\ref{sec:Download}, which is 
 sitting on HDFS, is first merged into one text file, and then duplicated by
 year. Specifically, the time series of monthly maximum temperature of each station
-is replicated based on original 48 years observations to include $2^{18}$ years 
-which is $3,145,728$ monthly observations. 
-The total size of the text data file is 386 GB which includes monthly maximum
-temperature observation over $3,145,728$ months at 7,738 different locations.
+is replicated based on original 48 years observations to include $2^{15}$ years 
+which is $393,216$ monthly observations. 
+The total size of the text data file is 332 GB which includes monthly maximum
+temperature observation over $393,216$ months at 7,738 different locations.
 
 \begin{description}
   \item[Input] The duplicated raw text data file on HDFS is read in as input. Each
@@ -171,11 +171,22 @@ total heap size of JVM will leave limited memory usage for other processes spons
 by the JVM, and indeed will force JVM to involve more garbage clean, which in 
 turn will hurt the job performance.    
 
+\subsubsection{\texttt{mapreduce.task.io.sort.factor}}
+
+Every time when the contents in the memory buffer specified by \\
+\texttt{mapreduce.task.io.sort.mb} reaches the spill percent threshold, a new
+spill file is generated. So there may be multiple output files generated after 
+the Map is finished. All of these spill files are merged into one sorted and
+partitioned file. This is done in in rounds, and the number of files merged in 
+each round is controlled by \texttt{mapreduce.task.io.sort.factor}. The default 
+value is 10.
+
+
 \subsubsection{\texttt{mapreduce.job.reduce.slowstart.completedmaps}}
 
 The parameter controls when Reducers should be launched. Specifically, it specifies
 the fraction of the number of Mappers which should be complete before Reducers
-are scheduled for the job. Under MapReduce2 (YARN) framework, this parameter
+are scheduled for the job. Under MapReduce2 (YARN) \cite{YARN} framework, this parameter
 becomes critical if the Map of MapReduce job is time consuming. Setting this 
 parameter to be a low value as default, which is 0.05, can start the Reducers
 doing nothing but waiting for the output from Mappers. However this waist several
@@ -207,21 +218,50 @@ Similar with the Mapper, there is also a spilling mechanism to avoid memory
 overflow. Specifically, the Map output is consistently copied to the proportion 
 of heap space specified by \texttt{mapreduce.reduce.shuffle.input.buffer.percent}.
 Once the contents in the memory buffer reaches threshold controlled by two 
-parameters collectively, the intermediate output or the input to Reduce is spilled 
-to local disk of the node which runs the Reduce. One of the two parameters is \\
+parameters collectively, the intermediate outputs or the inputs to Reduce is 
+spilled to local disk of the node which runs the Reduce. One of the two parameters 
+is \\
 \texttt{mapreduce.reduce.shuffle.merge.percent} which controls the threshold in 
 term of percent of buffer size. If the size of buffer size is occupied over this
 proportion, spilling to disk will be triggered. By default, this is set to be 
-0.66. Another controlling parameter is the 
-\texttt{mapreduce.reduce.merge.inmem.threshold}.
+0.66. Suppose the heap size of Reduce JVM is 4 GB as well, the memory buffer for
+coping is 2.8 GB by setting \texttt{mapreduce.reduce.shuffle.input.buffer.percent}
+to be 0.7. Then the size threshold is 1.85 GB. Another parameter controls the
+threshold is the \texttt{mapreduce.reduce.merge.inmem.threshold} which is discussed
+in the following paragraph.
 
 \subsubsection{\texttt{mapreduce.reduce.merge.inmem.threshold}}
 
-\subsubsection{\texttt{mapreduce.task.io.sort.factor}}
+Parameter \texttt{mapreduce.reduce.shuffle.merge.percent} controls the memory
+buffer threshold in term of the size of contents. Meanwhile the parameter \\
+\texttt{mapreduce.reduce.merge.inmem.threshold} controls the contents in memory
+buffer in term of counts. So the intermediate output held in the memory buffer
+cannot be too many or too large, otherwise they will be spilled to local disk.
+The default is 1,000. By setting this parameter to be 0 will hand over the control
+of spilling behaviors fully to the \texttt{mapreduce.reduce.shuffle.merge.percent}. 
+Notice that the spilled files on local disk are sorted by key. Once all 
+intermediate outputs are copied, the Reducers starts to merge and sort all those
+spilled files into several sorted files which will be feed to the reduce function
+as we defined. This merge process is done in rounds, and the number of merge files
+at each round is controlled by \texttt{mapreduce.task.io.sort.factor}, similar 
+as in Map stage. Until the number of merged files are equal or less than the number 
+specified by \\ \texttt{mapreduce.task.io.sort.factor}, instead of merging them 
+into one file, they are directly fed into reduce function. Moreover, not all
+of the intermediate data in the memory buffer are spilled into disk. Portion of 
+the intermediate data are reserved in the memory, and size is controlled by the
+next parameter.
 
 \subsubsection{\texttt{mapreduce.reduce.input.buffer.percent}}
 
-
+This parameter is specifying the proportion of total heap size of Reducer's JVM
+used to reserve the intermediate data in memory and directly feeds the reduce
+function. By default, this parameter is set to be 0, which forces all intermediate
+data to the local disk and leave all memory for the computation of reduce function.
+However, if the memory utilization of reduce computation is extremely light, then
+we can increase this parameter to be value close to 1 to keep more intermediate
+data in the memory on the reduce side and save strips to the local disk, which
+will improve the job performance. In \cite{li2014mronline}, it also suggests to
+set this value to be same as \texttt{mapreduce.reduce.shuffle.merge.percent}. 
 
 \subsection{Model User Tunning Parameters}
 
