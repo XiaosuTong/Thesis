@@ -132,13 +132,16 @@ in time dimension.
 
 \begin{description}
 \item[Input] $786,432$ key-value pairs. Key is the month index, and value is a 
-vector with length of $7,738$. The order of the numeric values in the vector is 
+vector with length of $7,738$. The order of the numeric values in each vector are 
 the same in all $786,432$ key-value pairs.
 \item[Output] $7,738$ output key-value pairs are generated. The key is changed
 to be location index, and the corresponding value is matrix with dimension 
 $786,432$ by 2. One column is the month index, and another column is the spatial
 smoothed value.
-\item[Map]For each key-value pair, 
+\item[Map]An intermediate key-value pair is generated for each element of the
+value of each input key-value pair. The intermediate key is the index of the 
+element which is the location index, and the corresponding value is a vector with
+two numbers, month index which is the input key, and the element itself.   
 \item[Reduce]
 
 \end{description}
