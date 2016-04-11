@@ -85,7 +85,7 @@ when the intermediate data can reside entirely in memory of the Reducer JVM,
 which achieved by assigning more memory from the JVM of Reducer for the purpose
 of holding as many as possible intermediate key-value pairs in memory. 
 
-\subsection{Spatial Fitting of Original Observation}
+\subsection{Spatial Smoothing of Original Observation}
 
 By taking the subset by time, the second 
 MapReduce job is applying spatial loess smoothing fitting to each month 
@@ -119,10 +119,10 @@ These information is used for each spatial loess smoothing in the Map step.
 This particular MapReduce job is different than the first reading in job. Here
 the Reduce step is not necessary. Moreover, the shuffle and sorting stage should
 also be avoid to save unnecessary network traffic and multiple trips to the local 
-disk, and the final results of Map are directly wrote to HDFS. Consequently, a 
-lot of MapReduce tuning parameter is not needed to be 
-considered in this job. The best performance of this job can be obtained by 
-enlarging the memory assigned to each Mapper for the computation.
+disk, and the final results of Map are directly wrote to HDFS. Consequently, the
+MapReduce tuning parameters which affect the shuffle and sorting stage are not 
+needed to be considered in this job. The best performance of this job can be 
+obtained by enlarging the memory assigned to each Mapper for the computation.
 
 \subsection{Swapping from By-time Division to By-location Division}
 
@@ -139,22 +139,130 @@ to be location index, and the corresponding value is matrix with dimension
 $786,432$ by 2. One column is the month index, and another column is the spatial
 smoothed value.
 \item[Map]An intermediate key-value pair is generated for each element of the
-value of each input key-value pair. The intermediate key is the index of the 
-element which is the location index, and the corresponding value is a vector with
-two numbers, month index which is the input key, and the element itself.   
-\item[Reduce]
-
+value of each input key-value pair. Totally, there are $786432 \times 7738$ 
+intermediate key-value pairs generated after the Map. The intermediate key is the 
+index of the element which is the location index, and the corresponding value is 
+a vector with two numbers, month index which is the input key, and the element 
+itself.   
+\item[Reduce] All intermediate key-value pairs that belong to the same location
+are sorted, shuffled, and sent to one Reducer. In the Reduce, these values of
+vector with length two are \texttt{rbind} together to be a matrix with dimension
+$786,432$ by 2.
 \end{description}
+
+Similar with the first \textbf{Reading in} MapReduce job, this job has very light
+computation in both Map and Reduce. But it does require heavy system I/O because
+the size of intermediate output from Map is about the same size as input files.
+So the network traffic between Map and Reduce and disk I/O in the Map are also 
+very heavy. The best performance with respect to the running time for this job
+should be achieve by assigning more memory of heap size of the Mapper's or 
+Reducer's JVM to the shuffle and sort stage of the job, in order to avoid 
+unnecessary strips to the local disk.
 
 \subsection{Temporal Fitting}
 
+The fourth MapReduce job in the routine is mainly focus on the temporal fitting
+on the time series at each location. This job is similar with the second job in
+the routine which proceeds the spatial loess smoothing on the original observation
+at each time point. Only Map stage is necessary, shuffle and sort stage and even
+reduce stage can be avoid. The outputs of Map are directly wrote to HDFS.
+
+\begin{description}
+\item[Input] $7,738$ key-value pairs. Key is the location index, and value is a 
+matrix with dimension $768,432$ by $2$. Two columns are month index and spatial
+smoothed value.
+\item[Output] Still $7,738$ output key-value pairs are generated. The key is kept
+as location index, however the corresponding value is updated to a matrix with 
+four columns of trend, seasonal, month index, and spatial smoothed value. 
+\item[Map] For each input key-value pair, \texttt{stlplus} function is called
+with pre-specified temporal smoothing parameters on the spatial smoothed time
+series. Two new columns therefore are generated and added to the matrix of input
+value. 
+\item[Reduce] There is no Reduce needed for this job, the outputs of map are 
+directly written to HDFS.
+\end{description}
+
+This is a job with only map stage. Shuffle and sorting and reduce are all avoid 
+in this job. Therefore the MapReduce tunning parameters we are considering do
+not have any effect to the performance of this job in term of running time.
+
 \subsection{Swapping from by location division to by time division}
+
+Once the temporal fitting is done in the previous MapReduce job, the by location
+division with all temporal fitting results, such as trend, seasonal components,
+and remainder is read into a new MapReduce job to generate the by time division,
+which will be used for further spatial fitting.
+
+\begin{description}
+\item[Input] $7,738$ key-value pairs. Key is the location index, and value is a 
+matrix with dimension $768,432$ by $4$, which includes temporal fitting results.
+\item[Output] $768,432$ output key-value pairs are generated. The key is changed
+to month index, the corresponding value is updated to a matrix of $7,738$ rows 
+and four columns which are trend, seasonal, location index, and spatial smoothed 
+value. 
+\item[Map] For each input key-value pair, a intermediate key-value pair is 
+collected for each row of the matrix value. Therefore, $768,432$ intermediate
+key-value pairs are created from each input key-value pair. Totally it is 
+$5,946,126,816$ key-value pairs, whose value is just a one-row matrix.
+\item[Reduce] Intermediate key-value pairs that share the same month index are 
+sorted and sent to one Reduce, then merged together by calling \texttt{rbind}
+function. The final by time division is saved on HDFS.
+\end{description}
+
+In this MapReduce job, computational complexity and memory usage requirement are 
+quite light in both Map and Reduce stage. But more memory should be allocated for
+shuffle and sorting stage of this job since the size of data is not shrunk by
+the Map function. Hadoop parameters for shuffle and sort stage should be tunned 
+to avoid multiple trips to local disk during this stage. 
 
 \subsection{Spatial Fitting of Remainder}
 
-readin, spatial-fit, swaptoLoc, stlplus-fit, swaptoTime, spatial-fit
+The last step for fitting is the spatial fitting for the remainder component from
+the STL smoothing. This is done in a MapReduce job, and input and output of this
+job are both by time division. The job does not change the key of input key-value
+pairs.
 
+\begin{description}
+\item[Input] $768,432$ key-value pairs are read in. Key is the month index, and 
+value is matrix with dimension $7,738$ by $4$, which includes temporal fitting 
+results.
+\item[Output] $768,432$ output key-value pairs are generated. The key is kept as
+month index, the corresponding value is updated to a matrix of $7,738$ rows 
+and five columns which includes a new column of spatial fitted value of remainder.
+\item[Map] The shared RData file containing all location information is copied
+load into the global environment of each Map. The the input value is merged with
+location information by location index. The \texttt{spaloess} function is called
+on the column of remainder for each input value. After the fitting, the location
+information with longitude, latitude and elevation are removed from the matrix
+when collect as intermediate value in order to illuminate the size of the data
+written to local disk.
+\item[Reduce] Reduce is not needed in this job. The outputs of Map are directly
+written to HDFS as by month division.
+\end{description}
 
+\subsection{By location division of Spatial Fitting of Remainder}
+
+The final step of the entire modeling routine is a MapReduce job to generate by
+location division with all estimated components from by time division. It is a
+job with Map, shuffle and sorting, Reduce stage.
+
+\begin{description}
+\item[Input] $7,738$ key-value pairs of by month division. Key is the month 
+index varying from 1 to $768,432$, and value is a matrix with dimension $7,738$ 
+by $4$, which includes all temporal fitting components, the spatial smoothed value
+of original observation, and the spatial smoothed value of remainder.
+\item[Output] $768,432$ output key-value pairs are generated. The key is changed
+to month index, the corresponding value is updated to a matrix of $7,738$ rows 
+and four columns which are trend, seasonal, location index, and spatial smoothed 
+value. 
+\item[Map] For each input key-value pair, a intermediate key-value pair is 
+collected for each row of the matrix value. Therefore, $768,432$ intermediate
+key-value pairs are created from each input key-value pair. Totally it is 
+$5,946,126,816$ key-value pairs, whose value is just a one-row matrix.
+\item[Reduce] Intermediate key-value pairs that share the same month index are 
+sorted and sent to one Reduce, then merged together by calling \texttt{rbind}
+function. The final by time division is saved on HDFS.
+\end{description}
 
 \section{Experiment Design}
 
@@ -279,8 +387,6 @@ we can increase this parameter to be value close to 1 to keep more intermediate
 data in the memory on the reduce side and save strips to the local disk, which
 will improve the job performance. In \cite{li2014mronline}, it also suggests to
 set this value to be same as \texttt{mapreduce.reduce.shuffle.merge.percent}. 
-
-\subsection{Model User Tunning Parameters}
 
 
 \section{\texttt{drSpaceTime} Package}
