@@ -40,7 +40,7 @@ The whole analysis routine consist of six MapReduce jobs, which are listing as
 following in order:
 
 \subsection{Reading in}
-
+\label{sec:readin}
 The first MapReduce job in the modeling routine is the Reading in job.
 The raw text data files as mentioned in section~\ref{sec:Download}, which is 
 sitting on HDFS, is first merged into one text file, and then duplicated by
@@ -86,7 +86,7 @@ which achieved by assigning more memory from the JVM of Reducer for the purpose
 of holding as many as possible intermediate key-value pairs in memory. 
 
 \subsection{Spatial Smoothing of Original Observation}
-
+\label{sec:spaofit}
 By taking the subset by time, the second 
 MapReduce job is applying spatial loess smoothing fitting to each month 
 independently in parallel. Meanwhile, a RData file which contains meta-data such
@@ -125,7 +125,7 @@ needed to be considered in this job. The best performance of this job can be
 obtained by enlarging the memory assigned to each Mapper for the computation.
 
 \subsection{Swapping from By-time Division to By-location Division}
-
+\label{sec:swaptoloc}
 After the spatial smoothing in each month, we have to switch the data from by 
 month division to by location division in order to proceed the smoothing procedure
 in time dimension. 
@@ -160,7 +160,7 @@ Reducer's JVM to the shuffle and sort stage of the job, in order to avoid
 unnecessary strips to the local disk.
 
 \subsection{Temporal Fitting}
-
+\label{sec:stlfit}
 The fourth MapReduce job in the routine is mainly focus on the temporal fitting
 on the time series at each location. This job is similar with the second job in
 the routine which proceeds the spatial loess smoothing on the original observation
@@ -187,7 +187,7 @@ in this job. Therefore the MapReduce tunning parameters we are considering do
 not have any effect to the performance of this job in term of running time.
 
 \subsection{Swapping from by location division to by time division}
-
+\label{sec:swaptotime}
 Once the temporal fitting is done in the previous MapReduce job, the by location
 division with all temporal fitting results, such as trend, seasonal components,
 and remainder is read into a new MapReduce job to generate the by time division,
@@ -216,7 +216,7 @@ the Map function. Hadoop parameters for shuffle and sort stage should be tunned
 to avoid multiple trips to local disk during this stage. 
 
 \subsection{Spatial Fitting of Remainder}
-
+\label{sec:sparfit}
 The last step for fitting is the spatial fitting for the remainder component from
 the STL smoothing. This is done in a MapReduce job, and input and output of this
 job are both by time division. The job does not change the key of input key-value
@@ -241,28 +241,46 @@ written to HDFS as by month division.
 \end{description}
 
 \subsection{By location division of Spatial Fitting of Remainder}
-
+\label{sec:swaptoloc2}
 The final step of the entire modeling routine is a MapReduce job to generate by
 location division with all estimated components from by time division. It is a
 job with Map, shuffle and sorting, Reduce stage.
 
 \begin{description}
-\item[Input] $7,738$ key-value pairs of by month division. Key is the month 
+\item[Input] $768,432$ key-value pairs of by month division. Key is the month 
 index varying from 1 to $768,432$, and value is a matrix with dimension $7,738$ 
 by $4$, which includes all temporal fitting components, the spatial smoothed value
 of original observation, and the spatial smoothed value of remainder.
-\item[Output] $768,432$ output key-value pairs are generated. The key is changed
-to month index, the corresponding value is updated to a matrix of $7,738$ rows 
-and four columns which are trend, seasonal, location index, and spatial smoothed 
-value. 
-\item[Map] For each input key-value pair, a intermediate key-value pair is 
-collected for each row of the matrix value. Therefore, $768,432$ intermediate
-key-value pairs are created from each input key-value pair. Totally it is 
-$5,946,126,816$ key-value pairs, whose value is just a one-row matrix.
-\item[Reduce] Intermediate key-value pairs that share the same month index are 
+\item[Output] $7,738$ output key-value pairs are generated. The key is changed
+to location index, the corresponding value is restructured to be a matrix of 
+$768,432$ rows and five columns which are trend, seasonal, location index, spatial 
+smoothed value of original observation, and spatial smoothed value of remainder. 
+\item[Map] An intermediate key-value pair is generated for each row of each input
+value matrix. The key is the location index for the corresponding row of the 
+input matrix, and the value is the one-row matrix with the month index added.
+\item[Reduce] Intermediate key-value pairs that share the same location index are 
 sorted and sent to one Reduce, then merged together by calling \texttt{rbind}
-function. The final by time division is saved on HDFS.
+function. The final by location division is saved on HDFS.
 \end{description}
+
+This last MapReduce job is another job in which more attention should be paid.
+By tuning potential Hadoop parameters, minimal amount of data is written to the
+local disk during the shuffle and sort stage. Also, the efficiency of copy stage 
+in which the intermediate outputs are copied to Reduce can also be improved by
+appropriated tunning.
+
+In the next section, we are going to discuss the Hadoop parameters considered to
+be tuned to improve the performance of the modeling routine. The whole routine is
+consist of 7 steps, each of which is done in one MapReduce job. Since the parameters
+we are considering are specific targeting the shuffle and sorting stage of the
+job, MapReduce job with only Map stage is immune to those Hadoop parameters.
+In the modeling routine, the jobs \ref{sec:spaofit}, ~\ref{sec:stlfit}, and 
+\ref{sec:sparfit} are this type of MapReduce job which only has Map step. 
+Therefore, we do not include them in the experiment of performance since tunning
+those Hadoop parameters will not affect their performance at all. In summary, 
+the MapReduce jobs we are going to include in each run of the experiment are
+\ref{sec:readin}, \ref{sec:swaptoloc}, \ref{sec:swaptotime}, \ref{sec:swaptoloc2}.
+
 
 \section{Experiment Design}
 
@@ -305,7 +323,6 @@ the Map is finished. All of these spill files are merged into one sorted and
 partitioned file. This is done in in rounds, and the number of files merged in 
 each round is controlled by \texttt{mapreduce.task.io.sort.factor}. The default 
 value is 10.
-
 
 \subsubsection{\texttt{mapreduce.job.reduce.slowstart.completedmaps}}
 
@@ -388,6 +405,14 @@ data in the memory on the reduce side and save strips to the local disk, which
 will improve the job performance. In \cite{li2014mronline}, it also suggests to
 set this value to be same as \texttt{mapreduce.reduce.shuffle.merge.percent}. 
 
+
+\section{\texttt{Spaloess} Package}
+
+\texttt{Spaloess} is a R package for spatial loess smoothing. It is highly 
+depends on the original \texttt{loess} function in the \texttt{stats} package
+in R. There are two main functions in the \texttt{Spaloess} package, which are
+\texttt{spaloess}function for spatial loess smoothing, and \texttt{predloess} 
+for the spatial prediction using loess smoothing.
 
 \section{\texttt{drSpaceTime} Package}
 
