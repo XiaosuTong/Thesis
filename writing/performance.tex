@@ -410,11 +410,29 @@ set this value to be same as \texttt{mapreduce.reduce.shuffle.merge.percent}.
 
 \texttt{Spaloess} is a R package for spatial loess smoothing. It is highly 
 depends on the original \texttt{loess} function in the \texttt{stats} package
-in R. There are two main functions in the \texttt{Spaloess} package, which are
-\texttt{spaloess}function for spatial loess smoothing, and \texttt{predloess} 
+in base R. There are two main functions in the \texttt{Spaloess} package, which 
+are \texttt{spaloess} function for spatial loess smoothing, and \texttt{predloess} 
 for the spatial prediction using loess smoothing. Most of implementation in these
 two functions are kept the same as the \texttt{loess} and \texttt{predict.loess}
-functions, which 
+functions, which is R wrapper functions. All memory allocation are done in 
+C, and real computation engine is implemented in FORTRAN. \texttt{Spaloess} does
+offer the following advantages compared with original \texttt{loess}:
+
+\begin{itemize}
+\item Allows different distance calculation. Euclidean distance and Great-Circle
+distance are allowed. For Great-Circle distance, the input spatial attributes
+must be longitude and latitude degree. Great-Circle distance calculation is
+implemented in FORGRAN.
+\item Building kd-tree based on all locations instead of non-NA locations. 
+In the original implementation of \texttt{loess} function, the kd-tree for
+interpolation is only built based on locations that do not have missing values.
+So if the prediction needs to be conducted at locations that are outside the 
+edge of the region, \texttt{loess} does not allow to do extrapolation for missing
+value. In the \texttt{spaloess} function, kd-tree is built based on all locations
+even those with missing value. Then interpolation is carried out at every 
+location including missing value.
+\item Can handle missing value in the dataset
+\end{itemize}
 
 \section{\texttt{drSpaceTime} Package}
 
