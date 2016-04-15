@@ -35,7 +35,7 @@ location ID as key in the Map function of $swap$-$to$-$location$ MapReduce job.
 Then the output of Map function is first written to local disk of nodes 
 
 \section{Modeling Routine}
-
+\label{sec:routine}
 The whole analysis routine consist of six MapReduce jobs, which are listing as
 following in order:
 
@@ -405,8 +405,9 @@ data in the memory on the reduce side and save strips to the local disk, which
 will improve the job performance. In \cite{li2014mronline}, it also suggests to
 set this value to be same as \texttt{mapreduce.reduce.shuffle.merge.percent}. 
 
+\section{Software Implementation of R Package}
 
-\section{\texttt{Spaloess} Package}
+\subsection{\texttt{Spaloess} Package}
 
 \texttt{Spaloess} is a R package for spatial loess smoothing. It is highly 
 depends on the original \texttt{loess} function in the \texttt{stats} package
@@ -419,24 +420,52 @@ C, and real computation engine is implemented in FORTRAN. \texttt{Spaloess} does
 offer the following advantages compared with original \texttt{loess}:
 
 \begin{itemize}
-\item Allows different distance calculation. Euclidean distance and Great-Circle
-distance are allowed. For Great-Circle distance, the input spatial attributes
-must be longitude and latitude degree. Great-Circle distance calculation is
-implemented in FORGRAN.
-\item Building kd-tree based on all locations instead of non-NA locations. 
-In the original implementation of \texttt{loess} function, the kd-tree for
-interpolation is only built based on locations that do not have missing values.
-So if the prediction needs to be conducted at locations that are outside the 
-edge of the region, \texttt{loess} does not allow to do extrapolation for missing
-value. In the \texttt{spaloess} function, kd-tree is built based on all locations
-even those with missing value. Then interpolation is carried out at every 
-location including missing value.
-\item Can handle missing value in the dataset
+\item Two different distance calculation are available. Euclidean distance and 
+Great-Circle distance are allowed. For Great-Circle distance, the input spatial 
+attributes must be longitude and latitude degree. Great-Circle distance 
+calculation is implemented in FORTRAN.
+\item Interpolation kd-tree is built based on all locations instead of only 
+non-NA locations as in \texttt{loess} function. 
+\item Missing values in the dataset can be handled directly within 
+\texttt{spaloess}. 
 \end{itemize}
 
-\section{\texttt{drSpaceTime} Package}
+In the original implementation of \texttt{loess} function, the kd-tree 
+\cite{bentley1980multidimensional} for 
+interpolation is only built based on observations that are not missing values. 
+Those missing observations are directly excluded from the analysis. It makes 
+extremely harder and computational expensive to predict at those missing value 
+especially if those missing value are outside the boundary of the space spanned
+by all independent variables. Instead, in the \texttt{spaloess} function, kd-tree 
+is built based on all observations even those with missing value. Then 
+interpolation can be easily conducted at every location including missing value.
+
+\subsection{\texttt{drSpaceTime} Package}
 
 \texttt{drSpaceTime} is a R package for spatial temporal analysis using divide 
 and recombined concept. It is highly depends on three exist R packages: 
 \texttt{Rhipe}, \texttt{stlplus}, and \texttt{Spaloess}, which are all open 
-source and available on Github \cite{github}.
+source and available on Github \cite{github}. Detailed documentation and examples
+can be found in the appendix.
+
+As demonstrated in \ref{sec:routine}, there are seven steps in the modeling 
+routine of spatial-temporal data. Each of steps are implemented in a function
+from \texttt{drSpaceTime} package, such as \texttt{readIn()} to read in the raw
+text files and generating by time division on HDFS; \texttt{spaofit()} to produce
+spatial smoothing fit of original observation at each time point; 
+\texttt{swaptoLoc()} to generate by location division from the by time division 
+including spatial smoothed values; \texttt{stlfit()} to carry out temporal fitting
+of the spatial smoothed value in each location by calling \texttt{stlplus} 
+function; \texttt{swaptoTime()} to generate by time division from the by location
+division which includes all STL fitted components; \texttt{sparfit()} to 
+carry out spatial smoothing fit of the remainder component of STL fit.
+
+Besides those functions which represents each steps of the modeling routine, 
+there are other two functions \texttt{spacetime.control()} and 
+\texttt{mapreduce.control()}, which are both returning a R list object. Concretely,
+the \texttt{mapreduce.control()} returns a list including all user tunable 
+Hadoop parameters used in a given MapReduce job. \texttt{spacetime.control}, on
+the other hand, returns a list with all smoothing parameters needed either for
+spatial smoothing or temporal smoothing. 
+
+Finally, the last function in the package is \texttt{predNew()}.
