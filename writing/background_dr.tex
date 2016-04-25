@@ -1,0 +1,54 @@
+\section{Divide and Recombine (D\&R) for Large Complex Data}
+
+\subsection{D\&R Statistical Framework}
+
+D\&R \cite{Guha:2012} is a statistical framework for the analysis of large complex
+data that enables feasible and practical analysis of large complex data. 
+
+The 
+analyst selects a division method to divide the data into subsets, applies an 
+analytic method of the analysis to each subset independently with no communication
+among subsets, selects a recombination method that is applied to the outputs 
+across subsets to form a result of the analytic method for the entire data.
+
+Analytic methods have two distinct categories, visualization methods whose outputs
+are visual displays, and number-category methods whose outputs are numeric and 
+categorical values. In D\&R, number-category analytic methods are typically applied
+to each of the subsets. Visualization methods are typically applied to each subset 
+in a sample of subsets because often there are too many of them to look at plots 
+of all \cite{Hafen:2013}.
+ 
+\subsection{Computational Environment}
+
+The front end of our computational environment is R \cite{R}, a widely used 
+software environment for statistical computing and graphics. On the other side, the
+back end is the Hadoop which consists of Hadoop Distributed File 
+System (HDFS) \cite{HDFS} for storage and processing engine (MapReduce) 
+\cite{mapreduce}. RHIPE \cite{Guha:2010}, the R and Hadoop Integrated Programming 
+Environment, bridges the gap between these two ends. 
+
+As analyst, we only need to specify R commands to carry out a D\&R job which
+consists of following three steps:
+\begin{itemize}
+\item Divide the whole dataset into subsets. It can be randomly dividing or
+can be done conditional on a given categorical variable. For example, for a spatial
+temporal data set, we can either divide the whole data by time or by location. 
+\item Apply the analytic method to each subset parallelly.   
+\item recombine the outputs of the A computations and write results to the HDFS. 
+\end{itemize}  
+
+The first step can be achieved by one MapReduce job using RHIPE R commands which 
+creates the subsets from the original raw data set sat on HDFS and 
+distributes the subsets across the servers of the cluster onto the Hadoop 
+Distributed File System (HDFS) as key-value pairs. Most of situation, the original
+raw data can be a raw text file saved on HDFS.
+
+Thereafter, the second and
+third steps can be implemented with another MapReduce job also specified by
+analyst in RHIPE R commands. In this second MapReduce job, a group of Map
+computation procedures are running embarrassingly parallel with a free core 
+assigned to each, which means independently with no communication among those Map
+procedures. We call those Map procedures the Mapper. Then, a data block or a 
+collection of subsets will be passed into those Mappers, and each subset
+will be applied with the analytic method independently.
+
