@@ -1,0 +1,83 @@
+\section{Geographically Weighted Regression}
+
+Another critical application of locally weighted regression method is in the 
+spatial analysis area which called geographically weighted regression. It was first
+introduced by Fotheringham in \cite{fotheringhamgeographically}, and it is nothing
+but a local weighted regression method within two dimension spatial space. It is
+a method for spatial non-stationary. Compared with other popular spatial analysis
+methods like kriging \cite{krige1951statistical} which illustrates the relationship 
+between neighbors by distance and a pre-defined covariance matrix, local regression 
+procedure is trying to tackle the problem from a different aspect.
+
+\subsection{Basic Methodology of GWR}
+
+Let $y=(y_{(u_1,v_1)}, y_{(u_2,v_2)}, \cdots, y_{(u_n,v_n)})$ be the observation 
+at $n$ different locations, each of which has a location coordinate $(u_i, v_i)$ 
+in the spatial dimension, like longitude and latitude coordinates. Let design matrix 
+and weight matrix for $(u, v)$ to be $X$ and $W(u, v)$ respectively, the estimate 
+of regression coefficient $\hat \beta$ is:
+\begin{equation}
+\hat \beta(u, v) = (X^TW(u,v)X)^{-1}X^TW(u,v)y
+\end{equation}
+Similarly with general loess smoothing method, the whole procedure of GWR can
+also be understood as a linear operation. So the fitted value at $(u, v)$ can 
+be written as a weighted average of $y_i$ as
+\begin{equation}
+\hat y_{(u,v)} = \sum_{i=1}^n l_i(u,v)y_i = l(u,v)y
+\end{equation}
+where
+\begin{equation}
+l(u,v) = (l_1(u,v), \cdots, l_n(u,v)) = e_1^T(X^TW(u,v)X)^{-1}X^TW(u,v)
+\end{equation}
+with $e_1^T = (1,0,\cdots,0)$. So the estimate at all location can be expressed
+as
+\begin{equation}
+\hat y = Ly
+\end{equation}
+where 
+\begin{equation}
+L =  
+\begin{pmatrix}
+  l_1(u_1,v_1) & l_2(u_1,v_1) & \cdots & l_n(u_1,v_1) \\
+  l_1(u_2,v_2) & l_2(u_2,v_2) & \cdots & l_n(u_2,v_2) \\
+  \vdots  & \vdots & \ddots & \vdots  \\
+  l_1(u_n,v_n) & l_2(u_n,v_n) & \cdots & l_n(u_n,v_n) 
+\end{pmatrix}
+\end{equation}
+$L$ is called operator matrix \cite{hafen2010local}, and it is very similar to the
+hat matrix in global least-squares regression which we can use to carry out 
+statistical inference. But $L$ is neither symmetric nor idempotent.
+
+\subsubsection{Weight Function}
+
+In general, any function satisfying following conditions can be weight function
+for the GWR:
+\begin{enumerate}
+\item $W(\mu) > 0$ for $|\mu| < 1$
+\item $W(-\mu) = W(\mu)$
+\item $W(\mu)$ is a nonincreasing function for $\mu \ge 0$
+\item $W(\mu) = 0$ for $|\mu| \ge 1$
+\end{enumerate}
+There are several possible functions proposed in \cite{fotheringhamgeographically}.
+In fact, most weight functions with smooth contact will give reasonable results.
+Consequently, the analysis conducted in chapter two only considers bi-square
+weight function, which just follows the default choice of loess procedure.
+
+\subsubsection{Spatial Neighborhood}
+
+In practice, the results of GWR are relatively insensitive to the choice of 
+weighting function but they are sensitive to the bandwidth of the particular 
+weighting function. There are two different ways to identify neighborhood of 
+target fitting point. The first one is called fixed spatial kernel 
+\cite{fotheringhamgeographically}. A fixed radius of neighborhood is specified
+for every fitting location. 
+However, a potential problem coming with this is that for some fitting locations,
+where data is sparse, the local models might be calibrated on very few data points, 
+giving rise to parameter estimates with high variance issue. 
+
+Accordingly, to reduce the high variance issue, another approach is proposed to 
+fix the number of observations in the neighborhood, so called adaptive spatial
+kernels \cite{fotheringhamgeographically}, which is the default in the original 
+loess method. So for each fitting location, a fixed number $k$ of neighbors is 
+specified, and the bandwidth of the weight function is determined by the distance
+from the target location to the $k$th nearest neighbor. 
