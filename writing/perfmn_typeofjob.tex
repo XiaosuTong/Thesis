@@ -1,0 +1,22 @@
+\section{Type of MapReudce Job}
+
+There are three main steps in one MapReduce job: Map, Shuffle and Sort, Reduce.
+
+Within our routine of analysis for spatial-temporal data, we categorize all 
+necessary MapReduce job into two different groups. The first type of MapReduce
+job is mainly focus on one of smoothing models, which is in either spatial or 
+temporal dimension. We name it as $model$-$fitting$ job. For this type of job, it 
+reads in a given type of division (either by time or by location) from HDFS, and 
+then carries out one type of smoothing procedure, depends on what the division is,
+within its Map step. There is no need for neither Reduce step nor shuffle and sort
+step in this type of job since the division format is not changed. So the output 
+of Map function is directly written onto HDFS.
+
+Another type of job is focusing on switching from one division to another, which
+we name as $swapping$ job. For this type of job, it reads in a given type of 
+division from HDFS. And for each input key-value pair, the Map function generates
+multiple intermediate key-value pairs with different keys. For instance, if by 
+time division is read in, and observations of all locations in each month is one 
+input key-value pair, then 7,738 intermediate key-value pairs is created with each
+location ID as key in the Map function of $swap$-$to$-$location$ MapReduce job.
+Then the output of Map function is first written to local disk of nodes 
