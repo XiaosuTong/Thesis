@@ -15,7 +15,7 @@ known form of function for $f(x_i)$, which is fully described by a finite
 set of parameters. For example, a linear function of predictor variables is 
 commonly chosen:
 \begin{equation} 
-f(x_i) = \beta_0 + \beta_1x_i
+f(x_i;\beta) = \beta_0 + \beta_1x_i
 \end{equation} 
 where $\beta_0$ and $\beta_1$ are the parameters in the model to be estimated. 
 The advantage of parametric regression method is that the relationship 
@@ -33,20 +33,20 @@ the data.
 \subsection{Local Regression models}
 
 One approach in the nonparametric regression family to modeling an unknown and
-complex $f$ is called local regression. Instead of assuming 
+complex $f$ is called local regression. Suppose we would like calculate the 
+estimate at $x_0$. Instead of assuming 
 $f(x)$ to have a parametric form overall, we assume that the data can be locally, 
 within some neighborhood of $x_0$, well-approximated by a parametric form which 
-may be polynomials or even a constant. For instance, let a neighborhood of $x_0$ 
-be $x_0 \pm h$ for some bandwidth $h > 0$.
+may be polynomials or even a constant.
 Nadaraya \cite{nadaraya1964} and Watson \cite{watson1964} proposed a local 
 constant estimator, or kernel regression method, with a pre-defined kernel 
 function as weighting function, called Nadaraya-Watson estimator:
 \begin{equation} 
-\hat f(x_0) = \sum_{i=1}^{n} \omega_{i}y_i
+\hat f(x_0) = \sum_{i=1}^{n} \omega_{i}(x_0)y_i
 \end{equation} 
 where 
 \begin{equation} 
-\omega_i = \frac{ K(\frac{x_i - x_0}{h})}{\sum_{i=1}^n K(\frac{x_i - x_0}{h})}
+\omega_i(x_0) = \frac{ K(\frac{x_i - x_0}{h})}{\sum_{i=1}^n K(\frac{x_i - x_0}{h})}
 \end{equation} 
 and $K(\cdot)$ is a non-negative real-valued integrable function, which satisfying 
 the following two requirements
@@ -56,7 +56,7 @@ the following two requirements
 \begin{equation} 
 K(-\mu) = K(\mu)
 \end{equation}
-The same idea can be illustrated when replacement of a quantitative variable by
+The same idea can be illustrated when replacing a quantitative variable by
 indicator variables in linear regression. It uses a constant kernel function 
 $K(\mu) = 1$ to assign equal weights to all neighbors within $x_0 \pm h$. 
 
@@ -72,9 +72,6 @@ predictor variable not only effects the weights of neighbors, it also provides m
 information to the local model. More theoretical results can be found in 
 \cite{fan1992design}, \cite{fan1993local}, and \cite{hastie1993varying}.
 
-In the next subsection, we will present more detail
-about local regression model specifically the local polynomial model.
-
 \subsection{Fitting a Local Polynomial Model}
 \label{sec:loess}
 
@@ -89,8 +86,9 @@ methodology, theory, and computation
 Suppose we are trying to fit at target point $x_0$ in the predictor space with
 one dimension. The loess fit is obtained by locally weighted least square with a
 polynomial of degree $\lambda$ using $n_{\alpha}$ nearest neighbors of $x_0$. 
-Concretely, a smoothing parameter $\alpha$ is defined between 0 and 1, which is
-the ratio of number of observations included in the model as neighbors. Then 
+Concretely, a smoothing parameter $\alpha$ is defined, which is the ratio of 
+number of observations included in the model as neighbors. Then the number of 
+neighbors are calculated as following since $\alpha$ could be larger than 1, 
 \begin{equation} 
 n_{\alpha} = \min(n, \lfloor \alpha n \rfloor)
 \end{equation}
@@ -111,15 +109,15 @@ boundary of its support.
 Meanwhile, the distance from each neighbor to the target point is calculated 
 based on the choice of distance calculation, such as Euclidean distance, Great 
 Circle distance, or Mahalanobis distance \cite{mahalanobis1936}. 
-Suppose we use Euclidean distance $\|\cdot\|$, and $d(x_0)$ is the distance 
-between $x_0$ and its $n_{\alpha}$th nearest neighbor.
+Suppose we use Euclidean distance $L^2$ norm $\|\cdot\|$, and $d_{\alpha}(x_0)$ is 
+the distance between $x_0$ and its $n_{\alpha}$th nearest neighbor.
 Then the weights for each $x_i$ when fitting at $x_0$ are generated as
 \begin{equation} 
 \omega_i(x_0) = T \left( \frac{\| x_i - x_0 \|}{d(x_0)} \right)
 \end{equation}
 which assigns 0 weight to $x_i$ outside the circle region with radius of $d(x_0)$.
 
-Once the weights of each $x_i$ are ready for a given $x_0$, the locally fitting
+Once the weights of each $x_i$ are calculated for a given $x_0$, the locally fitting
 is trivial. Let $Y=(y_1, y_2, \cdots, y_n)^{T}$ and 
 $\beta = (\beta_0, \beta_1, \beta_2)^{T}$, the local quadratic regression fit at
 target point $x_0$ can be illustrated in terms of matrix notation:
@@ -169,13 +167,12 @@ curve:
 
 One of shortcoming of local regression methods is its weakness to the effect of 
 outliers. In \cite{Cleveland:1979}, a robust local regression procedure was 
-proposed. First carry out the original local weighted regression fit at each 
-$x_i$, and once we got the $\hat y_i$, residuals defined as following are 
-calculated.
+proposed. Specifically, after the original local weighted regression fitting at 
+each $x_i$, residuals defined as following 
 \begin{equation}
 r_i = y_i - \hat y_i
 \end{equation}
-Let $B$ be the bi-square function defined as:
+Meanwhile, let $B$ be the bi-square function defined as:
 \begin{equation} 
 \label{bisquare}
 B(\mu) =
@@ -208,7 +205,7 @@ W_{update} =
   0 & 0 & \cdots & \delta_n\omega_n(x_0) 
 \end{pmatrix}
 \end{equation}
-Finally we repeatedly utilize this procedure with a number of $t$ times to get
+Finally we repeatedly utilize this procedure with a number of times to get
 the robust locally weighted regression fitted value $\hat y_i$. Usually, four
 iteration time is enough to get reliable and converged result.
 
@@ -231,9 +228,10 @@ number of observation in each cell is no more than
 \lfloor\frac{n\alpha}{5}\rfloor
 \end{equation} 
 Instead of getting local weighted regression estimate at every point,
-the directly estimation is only calculated at the vertices. Derivatives of 
-$\hat y$ are also estimated at the vertices by taking the slopes of the local 
-models. And then cubic Hermite spline is used to interpolate any point within the
-corresponding cell.
-In \cite{hafen2010local}, Hafen demonstrated that the interpolated fit is very 
-close to the exact fit, but make the computation to be linear in $n$.
+the directly estimation is only calculated at the vertices of the kd-tree. 
+Derivatives of $\hat y$ are also estimated at the vertices by taking the slopes 
+of the local models. And then cubic Hermite spline is used to interpolate any 
+point within the corresponding cell.
+In \cite{hafen2010local}, Hafen demonstrated with more details that the 
+interpolated fit is very close to the exact fit, but make the computation to be 
+linear in $n$.
