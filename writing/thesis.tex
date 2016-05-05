@@ -67,6 +67,7 @@
 
 \usepackage{pdfpages}
 \usepackage{fancybox}
+
 % Title of thesis (used on cover and in abstract).
 % The title shown must be the full, official title of the thesis.
 % Superscripts and subscripts are not permitted in the title.
@@ -147,7 +148,6 @@
 %
 % My command definitions specific to my thesis.
 %
-
 % CHANGE NEXT TWO LINES?
 % Let typing "\en" be exactly the same as typing "\ensuremath". 
 \let\en=\ensuremath
@@ -185,24 +185,9 @@
 \volume
 
 % Front matter:
-%     dedication
-%     acknowledgments
-%     preface
-%     table of contents
-%     list of tables
-%     list of figures
-%     list of symbols
-%     list of abbreviations
-%     nomenclature
-%     glossary
-%     abstract
-%     publication
 \include{front}
 
-
-%
-% Put chapter \include commands here.
-%
+% using uppercase chapter name
 \makeatletter
 \def\@chapter[#1]#2{%
   \ifnum \c@secnumdepth >\m@ne
@@ -221,14 +206,15 @@
 }
 \makeatother
 
-% Introductions may precede the first chapters or major divisions of theses.
-% Reference: TM2006, page 31.
-% CHANGE NEXT LINE?
+%
+% Put chapter \include commands here.
+%
 \include{chapter_bkgrd}
 
 \include{chapter_spatemp}
 
 \include{chapter_perfmn}
+
 % Summary and/or conclusions are optional but often used.
 % The summary and/or conclusions often are the last
 % the last major division(s) of the text.
