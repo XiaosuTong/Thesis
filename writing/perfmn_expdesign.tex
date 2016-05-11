@@ -44,9 +44,9 @@ value is 10.
 
 The parameter controls when Reducers should be launched. Specifically, it specifies
 the fraction of the number of Mappers which should be complete before Reducers
-are scheduled for the job. Under MapReduce2 (YARN) \cite{YARN} framework, this parameter
-becomes critical if the Map of MapReduce job is time consuming. Setting this 
-parameter to be a low value as default, which is 0.05, can start the Reducers
+are scheduled for the job. Under MapReduce2 (YARN) \cite{YARN} framework, this 
+parameter becomes critical if the Map of MapReduce job is time consuming. Setting 
+this parameter to be a low value as default, which is 0.05, can start the Reducers
 doing nothing but waiting for the output from Mappers. However this waist several
 containers assigned for Reducers without doing anything instead of assigning them
 to the Mappers under pending statues.   
@@ -121,7 +121,38 @@ data in the memory on the reduce side and save strips to the local disk, which
 will improve the job performance. In \cite{li2014mronline}, it also suggests to
 set this value to be same as \texttt{mapreduce.reduce.shuffle.merge.percent}. 
 
+\subsubsection{\texttt{mapreduce.job.reduces}}
+
+This parameter controls the number of reduce tasks, which palys a critical rule
+on the performance of reduce side. One fact of our analysis routine is that it is
+a sequence of MapReduce jobs. The sequence file generated from one MapReduce job
+is the input to the next job. So it is crucial to decide the number of reduce
+tasks because it also controls the number of files in the output path on HDFS. 
+From a given MapReduce job, the number of reduce tasks should be set to be a 
+reasonable number because this controls the size of intermediate data sent to 
+each reducer under the assumption that each key-value pair has roughly the same
+size in term of memory usage. In other words, this parameter controls the amount
+of data that will be processed by each reducer. If too few of reduce tasks are
+specified, then more intermediate data is sent to each reducer. Then it is more
+likely to invoke the multiple trips to local disk on the reduce side as we 
+mentioned in the paragraph about \texttt{mapreduce.reduce.shuffle.merge.percent}.
+Once this MapReduce job finished, each reducer generated a file on HDFS hold the 
+output key-value pairs. The next MapReduce job read in those files and initialize
+several map tasks for each file, and the number of map tasks for each file is 
+determined by
+\begin{equation} 
+\frac{\text{size of the file}}{\text{block size of HDFS}}
+\end{equation}
+The remainder of the division above will be also stored as a block on HDFS, and
+it starts a map task as well even if it only has 1 MB amount of data. If too much
+files are generated in the previous MapReduce job with a large number of reduce
+tasks, each of which highly likely has a tiny block whose size is much smaller 
+than an usual block. Those small blocks still occupies the same amount of resource
+as a full block does, which is dramatically inefficient. 
+
+
 \section{Software Implementation of R Package}
+\label{sec:Rpackage}
 
 \subsection{\texttt{Spaloess} Package}
 
