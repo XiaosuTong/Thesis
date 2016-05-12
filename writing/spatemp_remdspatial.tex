@@ -210,12 +210,12 @@ and prediction error of each 128 stations are calculated. This procedure is
 repeated until the prediction error is calculated at all 7,738 stations, and the
 mean squared error (MSE) of given month is calculated as following
 \begin{equation} 
-MSE_m = \sum_{l=1}^{7738} \left( Y_{ml} - S_{ml} - T_{ml} - G_{ml}
+MSE_m = \sum_{l=1}^{7738} \left( y_{ml} - \hat s_{ml} - \hat t_{ml} - \hat g_{ml}
 \right) 
 \end{equation} 
-where $m$ is from 1 to 576, $Y_{ml}$ is the maximum temperature at month $m$ 
-station $l$. $S_{ml}$, $T_{ml}$ are the estimated seasonal and trend
-components respectively. $G_{ml}$ is the spatially smoothed remainder value.
+where $m$ is from 1 to 576, $y_{ml}$ is the maximum temperature at month $m$ 
+station $l$. $\hat s_{ml}$, $\hat t_{ml}$ are the estimated seasonal and trend
+components respectively. $g_{ml}$ is the spatially smoothed remainder value.
 The MSE for each month is calculated in parallel.
 
 \subsubsection{Generating Database for Cross Validation}
