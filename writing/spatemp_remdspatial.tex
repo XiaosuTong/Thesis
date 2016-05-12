@@ -1,55 +1,103 @@
 \section{Spatial Smoothing of Remainder}
 \label{sec:a1950.spafit}
 
-As we introduced in section XXX, \texttt{stlplus} is a very powerful procedure
-which can capture the seasonal and overall trend in the time series. In the 
-previous section, we carried out \texttt{stlplus} fit with same parameters in
-parallel over all 7,738 stations, and results are very promised. Meanwhile, the
-results are save as division by station on the HDFS as key-value pairs after
-the \texttt{stlplus} fit. The model we are proposing is an additive model for 
-maximum temperature with spatial and temporal components. 
-$$
-Y_{ml} = S_{ml} + T_{ml} + G_{ml} + R_{ml}
-$$
-where $Y_{ml}$ is the maximum temperature observation at month m, location l. 
-$S_{ml}$ and $T_{ml}$ are the seasonal component and trend component fitted by
-\texttt{stlplus} with t.window equal to 241, t.degree equal to 1, and s.window
-is \texttt{periodic}, and $G_{ml}$ is the geographic component at month m, 
-location l. $R_{ml}$ is the residual. 
-
-Before we start the spatial fit in each month parallelly, the a new division by
-month which are key-value pairs including $S_{ml}$, $T_{ml}$, and \texttt{stlplus} 
-remainder in the value, and month index as key needs to be generated on HDFS.
-The result of parallel Seasonal Trend Loess fit from previous section is saved
-as by station divisions on HDFS. We have to utilize another MapReduce job to 
-swap the division from by station to by month.
+As we introduced in section \ref{sec:stl}, \texttt{stlplus} is a very powerful 
+procedure which can capture the seasonal and overall trend in the time series. 
+In the previous section, we carried out \texttt{stlplus} fit with same parameters 
+in parallel over all 7,738 stations, and results are very promised. Meanwhile, 
+the results are save as division by station on the HDFS as key-value pairs after
+the \texttt{stlplus} fit. The STL remainder is the component left in the time
+series which cannot be captured by the STL procedure. So there is no more pattern
+left in the remainder temporally. However, temporal fitting is not the end of
+the analysis. Let us first swap the by station division, which contains the 
+\texttt{seasonal}, \texttt{trend}, and \texttt{remainder}, to by month division. 
 
 \begin{description}
   \item[Input] division by station with STL fitting results generated from 
   section~\ref{sec:a1950.stl}. For each key-value pair, the key is one of 
   \texttt{station.id}, and the value is the data.frame includes STL fitting 
   results for corresponding station.
-  \item[Output] division by month key-value pairs. The key is a vector of 
-  \texttt{year} and \texttt{month} which identifies one of 576 months, and the 
-  value is a data.frame with 7,738 rows and 8 columns which are station 
-  information (longitude, latitude, and elevation) and STL fitting result 
-  (\texttt{trend}, \texttt{seasonal}, and \texttt{remainder}) for the 
-  corresponding station in that given month.
+  \item[Output] division by month key-value pairs. The key is \texttt{date} which 
+  identifies one of 576 months, and the value is a data.frame with 7,738 rows and 
+  7 columns which are station information (\texttt{station.id}, \texttt{lon}, 
+  \texttt{lat}, and \texttt{elev}) 
+  and STL fitting result (\texttt{trend}, \texttt{seasonal}, and 
+  \texttt{remainder}) for the corresponding station in that given month.
   \item[Map] A FlatMap function is defined. For each map input key-value pair, 
   \texttt{station.id} column is added to the value, and then we brake the input 
   value to be 576 one-row data.frame. Then we generate an intermediate key-value 
-  pair for each of them, whose corresponding key is the vector of \texttt{year} 
-  and \texttt{month}. Meanwhile These two columns are removed from the one-row 
-  data.frame.   
+  pair for each of them, whose corresponding key is the \texttt{date}. Meanwhile 
+  \texttt{date} column is removed from the one-row data.frame.   
   \item[Reduce] All intermediate key-value pairs generated in the Map step are 
   shuffled and sorted, then every 7,738 one-row data.frame who share the same 
   key are combined together by \texttt{rbind} function. The final output key-value
   pairs are then saved on HDFS.
 \end{description}
 
-The next MapReduce job we exhibit how to read in above new division by month from 
-HDFS, and then process the spatial loess fit on each key-value pairs of the 
-remainder surface from STL fitting in each month.
+After the by month division is generated, we can again ultilize the same type of 
+MapReduce job as we described in section~\ref{sec:impute.w/o.elev} to generate 
+visualization display for each month in parallel.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/a1950.remainder.vs.lat.lon.pdf}
+  {Link to figure}
+  \captionof{figure}{STL remainder vs. latitude conditional on longitude}
+  \label{a1950.remdvslat.lon}
+\end{center}
+\end{framed}
+
+In the Figure~\href{../plots/a1950/spafit/a1950.remainder.vs.lat.lon.pdf}
+{\ref*{a1950.remdvslat.lon}}, the remainder is plotted against to latitude of the
+station conditional on the longitude. Longitude is equally cut into 20 levels so
+each level has about 250 stations. Clearly there is quadratic relationship 
+between the remainder and latitude in all different levels of longitude. The 
+pattern is quite different between different months, but it cannot be neglected.
+For instance, in September 1950, there exists a convex quadratic shape in the 
+most of longitude levels. However in October 1950, the shape of the pattern is
+changed to be concave mostly.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/a1950.remainder.vs.lon.lat.pdf}
+  {Link to figure}
+  \captionof{figure}{STL remainder vs. longitude conditional on latitude}
+  \label{a1950.remdvslon.lat}
+\end{center}
+\end{framed}
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/a1950.remainder.vs.elev.lon.pdf}
+  {Link to figure}
+  \captionof{figure}{STL remainder vs. elevation conditional on longitude}
+  \label{a1950.remdvselev.lon}
+\end{center}
+\end{framed}
+
+
+Figure~\href{../plots/a1950/spafit/a1950.remainder.vs.lon.lat.pdf}
+{\ref*{a1950.remdvslon.lat}}, and
+Figure~\href{../plots/a1950/spafit/a1950.remainder.vs.elev.lon.pdf}
+{\ref*{a1950.remdvselev.lon}}, similar situation is found that the variation of 
+remainder component can be explained by the spatial factors in stead of temporal
+factor. Conditionally parametric spatial loess is considered to regress the 
+remainder to the three spatial factors by using functions from \texttt{Spaloess} 
+package. The next MapReduce job we exhibit how to read in above new division by 
+month from HDFS, and then process the spatial loess fit on each key-value pairs 
+of the remainder surface from STL fitting in each month.
+
+
+%The model we are proposing is an additive model for 
+%maximum temperature with spatial and temporal components. 
+%\begin{equation} 
+%Y_{ml} = S_{ml} + T_{ml} + G_{ml} + R_{ml}
+%\end{equation} 
+%where $Y_{ml}$ is the maximum temperature observation at month m, location l. 
+%$S_{ml}$ and $T_{ml}$ are the seasonal component and trend component fitted by
+%\texttt{stlplus} with t.window equal to 241, t.degree equal to 1, and s.window
+%is \texttt{periodic}, and $G_{ml}$ is the geographic component at month m, 
+%location l. $R_{ml}$ is the residual. 
 
 \begin{description}
   \item[Input] 576 input key-value pairs which are generated in the MapReduce job
@@ -68,106 +116,19 @@ remainder surface from STL fitting in each month.
 We specify the smoothing parameter span of spatial loess to be 0.015 and local
 polynomial degree to be quadratic. Longitude and latitude are included in the 
 local polynomial model as predictor. Elevation with log base 2 transformation is
-added in the model as conditional parametric predictor with first and second 
-degree as well, which means the elevation will be fitted as a global variable 
-instead of locally. 
-
-Totally, there are 2,096,822 residuals. The first diagnostic view graph for the
-residuals is to visualize the distribution of residuals. 
-However, plotting all 2,096,822 residuals on one page of plot is not trivial. Not
-mention the size of the visual graph, generating the graph itself is time 
-consuming. The easiest way to simplify the plot is to draw only specific quantiles
-instead of all of them. Concretely, we specify a sequence of pre-defined f-value,
-$f_i$, and then approximate the $q(f_i)$ quantiles correspondingly. With respect
-to the approximation method, we borrow the idea from the \texttt{drQuantile} 
-function of \texttt{datadr} package \cite{datadr}, which we calculate the quantiles
-in parallel. This process is accomplished in a sequence of MapReduce jobs described 
-below. The first MapReduce job is calculating the overall range of the residuals.
-
-\begin{description}
-  \item[Input] 576 input key-value pairs, key is the vector of \texttt{year} and
-  \texttt{month}, and value is the data.frame including 7,738 rows of 
-  \texttt{residual}, \texttt{trend}, \texttt{seasonal}, and \texttt{spafit}.
-  \item[Output] one key-value pair whose value is a vector with the maximum and
-  minimum of the residual.
-  \item[Map] For each input key-value pair, the minimum and maximum value of 
-  residual is calculated and saved as a numeric vector. Meanwhile, the input
-  key is changed to be 1, which is meaningless.
-  \item[Reduce] The minimum and maximum of each month are grouped and sent into
-  one reducer. The overall range of residual is calculated based on them.
-\end{description}
-
-And then, the whole range of residual is equally cut into 10,000 small intervals 
-or bins. The idea is trying to count the frequency of residuals falling into each
-bin and using the center of each bin to represent the value of all residuals in
-the bin, and it can be implemented lightly in parallel. This procedure is 
-demonstrated in the following MapReduce job.
-
-\begin{description}
-  \item[Input] 576 input key-value pairs, key is the vector of \texttt{year} and
-  \texttt{month}, and value is the data.frame including 7,738 rows of 
-  \texttt{residual}, \texttt{trend}, \texttt{seasonal}, and \texttt{spafit}.
-  \item[Output] 10,000 key-value pairs whose key is the center point of each 
-  bin, and value is the number of residuals falling into the corresponding bin.
-  \item[Map] For each input key-value pair, the frequency of residuals in each
-  of 10,000 bins are calculated by R function \texttt{cut}. Then we generate
-  10,000 intermediate key-value pairs, one for each bin. The key is index of bin,
-  and value is the count of residuals in corresponding bin. 
-  \item[Reduce] All counts who share the same bin index are shuffled, sorted, and
-  sum together. The final 10,000 frequencies of residuals in bins are saved as
-  key-value pairs on HDFS.
-\end{description}
-
-Once we got the frequency table of residuals in each bin, it is trivial to get
-the accumulated frequency, based on which, we can easily approximate the 
-quantiles at the pre-defined f values $f_i$ by left-continuous constant 
-interpolation. In Figure~
-\href{../plots/a1950/spafit/d2/span0.015/a1950.residual.centerquant.pdf}
-{\ref*{spafit.centerquant}}, sequence of quantiles from 0.005 quantiles to 0.995
-quantiles increment by 0.005 are plotted against to their corresponding f-value.
-It shows that, 99\% of residuals are symmetrically distributed within $\pm 2$, 
-and are centering at 0 as well. 90\% of residuals, which are 1,887,140, are 
-distributed within $\pm 1$.
-
-\begin{framed}
-\begin{center}
-  \href{../plots/a1950/spafit/d2/span0.015/a1950.residual.centerquant.pdf}
-  {Link to figure}
-  \captionof{figure}{The distribution of residual}
-  \label{spafit.centerquant}
-\end{center}
-\end{framed}
-
-Moreover, a quantile-quantile plot of residual is shown in Figure~
-\href{../plots/a1950/spafit/d2/span0.015/a1950.residual.QQ.pdf}
-{\ref*{spafit.qq}}. The 199 quantiles from 0.005 to 0.995 are drawn against to
-the corresponding quantiles from a t-distribution with degree of freedom 3. 
-Clearly, The linearity of the points suggests that the data are linearly related
-to a t-distribution centered at 0 with degree of freedom 3.
-
-\begin{framed}
-\begin{center}
-  \href{../plots/a1950/spafit/d2/span0.015/a1950.residual.QQ.pdf}
-  {Link to figure}
-  \captionof{figure}{The quantile-quantile plot of residual}
-  \label{spafit.qq}
-\end{center}
-\end{framed}
-
-Besides the diagnostics plot of the distribution of residuals, plots of the 
-residuals against the explanatory variables (longitude, latitude, and elevation)
-should also be visualized and assessed.
+added in the model as global variable with first or second degree, which means 
+the elevation will be fitted as a global variable instead of locally. 
 
 In Figure~\href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.lon.lat.pdf}
 {\ref*{spafit.lon.lat}}, the final fitted residual is plotted against to longitude
 conditional on equally cut interval of latitude for each month. There are roughly
-250 points in each panel of latitude interval. Also a loess 
-smoothing curve is added with span is equal to 0.25 and degree is linear. 
-Collectively, the loess smoothing curve in each panel of latitude level in a given
-month is surprisingly a almost flat line closed to 0. Meantime, residuals are
-randomly scattered about 0 and the width is equal throughout for all panels of 
-each month. But we notice there are some outliers with extreme residuals (outside
-of $\pm 2$). We will analyze their property in later subsection.
+250 points in each panel of latitude interval. Also a loess smoothing curve with 
+0.25 span and local linear fit is superposed on each panel. Collectively, the 
+loess smoothing curve in each panel of latitude level in a given month is 
+surprisingly almost flat closing to 0. Meantime, residuals are randomly scattered 
+about 0 and the width is equal throughout all panels of each month. But we notice 
+there are some outliers with extreme residuals (outside of $\pm 2$). We will 
+analyze their property in later subsection.
 
 \begin{framed}
 \begin{center}
@@ -210,8 +171,6 @@ with negative elevation. Collectively, there is not any pattern related to eleva
 that is remained in residual. The loess smoothing curves are all surprisingly 
 around 0 within each panel of longitude or latitude in each month.
 
-
-
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/spafit/d2/span0.015/a1950.spaResid.vs.elev.lat.pdf}
@@ -230,12 +189,17 @@ around 0 within each panel of longitude or latitude in each month.
 \end{center}
 \end{framed}
 
-\subsection{Tunning Parameters of Spatial Loess}
+In the next subsection, we are going to decide the best smoothing parameter for
+the spatial loess smoothing on the remainders. This is done by utilizing cross-
+validation procedure with near exact replicate framework to get the training 
+testing dataset.
+
+\subsection{Tunning Smoothing Parameters of Spatial Loess}
 
 In the spatial loess fitting, there are two smoothing parameters, span and degree,
-which are used to control the size of observations and the complexity of each 
+which are used to control the number of neighbors and the complexity of each 
 local model. But just as most of nonparametric method, there is no rule of thumb
-to determinate the choice of these smoothing parameters. Consequently, we utilize 
+to determinate the choice of these smoothing parameters. Consequently, we consider
 the leave-p-out cross validation method to find the best model based on the mean 
 squared error. Specifically, 128 stations are randomly sampled as testing dataset
 from the 7,738 stations of each month. In order to guarantee these 128 stations
@@ -245,15 +209,18 @@ at 128 stations of given month are predicted using the rest of training stations
 and prediction error of each 128 stations are calculated. This procedure is 
 repeated until the prediction error is calculated at all 7,738 stations, and the
 mean squared error (MSE) of given month is calculated as following
-$$
-MSE_m = \sum_{l=1}^{7738} \left( Y_{ml} - \hat S_{ml} - \hat T_{ml} - \hat G_{ml}
+\begin{equation} 
+MSE_m = \sum_{l=1}^{7738} \left( Y_{ml} - S_{ml} - T_{ml} - G_{ml}
 \right) 
-$$
-where $m$ is from 1 to 576. The MSE for each month is calculated in parallel.
+\end{equation} 
+where $m$ is from 1 to 576, $Y_{ml}$ is the maximum temperature at month $m$ 
+station $l$. $S_{ml}$, $T_{ml}$ are the estimated seasonal and trend
+components respectively. $G_{ml}$ is the spatially smoothed remainder value.
+The MSE for each month is calculated in parallel.
 
 \subsubsection{Generating Database for Cross Validation}
 
-As we discussed in section~\ref{sec:a1950.stlexp}, the leave-128-out cross 
+As we mentioned in section~\ref{sec:a1950.stlexp}, the leave-128-out cross 
 validation for each month can intuitively be proceeded in parallel using one 
 MapReduce job which takes the new by month division generated in 
 section~\ref{sec:a1950.spafit} as input and carries out leave-128-out cross 
@@ -266,14 +233,13 @@ We illustrate the details of generating the database for cross validation in the
 following MapReduce job.
 
 \begin{description}
-  \item[Input] 576 input key-value pairs, key is the vector of \texttt{year} and
-  \texttt{month}, and value is the data.frame including 7,738 rows of 
-  \texttt{tmax}, \texttt{trend}, \texttt{seasonal}, \texttt{remainder}, and
-  station information.
+  \item[Input] 576 input key-value pairs, key is \texttt{date}, and value is the 
+  data.frame including 7,738 rows of \texttt{tmax}, \texttt{trend}, 
+  \texttt{seasonal}, \texttt{remainder}, and station information.
   \item[Output] 35,136 key-value pairs are generated, whose key is a combination
   of month index and index from 1 to 61 of the observation in each cell, 
-  and value is same as the input value but with a new column \texttt{flag} which
-  identifies 128 stations as the testing dataset.
+  and value is same as the input value but with a new column \texttt{flag} with 
+  value of 0 or 1, which identifies 128 stations as the testing dataset.
   \item[Map] A FlatMap function is defined in which 61 intermediate key-value
   pairs are generated from each input key-value pair. First of all, a kd-tree with
   128 cells are created based on all 7,738 \texttt{remainder}. Stations in each 
@@ -285,11 +251,11 @@ following MapReduce job.
   \texttt{ii} index are 1. Consequently there are 35,136 intermediate key-value
   pairs are generated in total.
   \item[Reduce] No Reduce step is needed. All intermediate key-value pairs are
-  saved on HDFS right after Map step.
+  saved directly on HDFS right after Map step.
 \end{description}
 
-Next, the database we produced above is read into a MapReduce job to proceed the 
-cross validation in parallel.
+Next, the database we produced above is read into another MapReduce job to proceed 
+the cross validation in parallel.
 
 \begin{description}
   \item[Input] database of cross validation with 35,136 key-value pairs are read 
@@ -307,9 +273,8 @@ cross validation in parallel.
   The corresponding key is jut the month index: vector of \texttt{year} and 
   \texttt{month}.
   \item[Reduce] All summation of squared error who share the same key are shuffled 
-  and grouped together, then sent to one reducer. The final MSE is calculated 
-  for each month. The final 576 key-value pairs, one for each month, are saved 
-  on HDFS.
+  and sent to one reducer. The final MSE is calculated for each month. The final 
+  576 key-value pairs, one for each month, are saved on HDFS.
 \end{description}
 
 \subsubsection{Experiment: span = c(0.005, 0.015, 0.025, 0.05), degree = c(1, 2)}
@@ -352,17 +317,174 @@ equal to 0.015 provides lowest prediction error compared with other span values.
 \end{center}
 \end{framed}
 
-\subsection{Outliers}
+\subsection{Diagnostics of Residual}
 
-\begin{itemize}
-  \item January 13, 1950 - The January 1950 Blizzard
-  21.4" of snow fell in Seattle on the 13th together with winds of 25-40 MPH, the 
-  2nd greatest 24 hour snowfall recorded. Claimed 13 lives in the Puget Sound area
-  During Jan, 18 days with high temps 32 degrees or lower.
-  The winter of 1949-50 the coldest winter on record in Seattle - average temp 
-  34.4 degrees. Eastern Washington, North Idaho, and parts of Oregon were 
-  paralyzed - lower elevation snow depths ranged up to 50 inches and temperatures
-  plunged into minus teens and twenties. Several dozen fatalities.
-  \item The second item
-  \item The third etc
-\end{itemize}
+Totally, there are 2,096,822 residuals. The first diagnostic view graph for the
+residuals is to visualize the distribution of residuals. 
+However, plotting all 2,096,822 residuals on one page of plot is not trivial. Not
+mention the size of the visual graph, generating the graph itself is time 
+consuming. The easiest way to simplify the plot is to draw only specific quantiles
+instead of all of them. Concretely, we specify a sequence of pre-defined f-value,
+$f_i$, and then approximate the $q(f_i)$ quantiles correspondingly. With respect
+to the approximation method, we borrow the idea from the \texttt{drQuantile} 
+function of \texttt{datadr} package \cite{datadr}, which we calculate the quantiles
+in parallel. This process is accomplished in a sequence of MapReduce jobs described 
+below. The first MapReduce job is calculating the overall range of the residuals.
+
+\begin{description}
+  \item[Input] 576 input key-value pairs, key is the \texttt{date}, and value is 
+  the data.frame including 7,738 rows of \texttt{tmax}, \texttt{trend}, 
+  \texttt{seasonal}, and \texttt{spafit}, and station information.
+  \item[Output] one key-value pair whose value is a vector with the maximum and
+  minimum of the residual.
+  \item[Map] For each input key-value pair, the minimum and maximum value of 
+  residual is calculated and saved as a numeric vector. Meanwhile, the input
+  key is changed to be 1, which is meaningless. The only purpose is to make sure
+  all monthly minimum and maximum value can be sent to one reducer. The 
+  intermediate key can be any integer as long as all 576 are the same.
+  \item[Reduce] The minimum and maximum of each month are grouped and sent into
+  one reducer. The overall range of residual is calculated based on them.
+\end{description}
+
+The whole range of residual is equally cut into 10,000 small intervals 
+or bins. And then the cutting points of bins of residual is read back to the R 
+session on the front-end, and saved as RData file back to the HDFS.
+The idea is trying to count the frequency of residuals falling into each
+bin and using the center of each bin to represent the value of all residuals in
+the bin. It can be implemented lightly in parallel. This procedure is 
+demonstrated in the following MapReduce job.
+
+\begin{description}
+  \item[Input] 576 input key-value pairs, key is the \texttt{date}, and value is 
+  the data.frame including 7,738 rows of \texttt{tmax}, \texttt{trend}, 
+  \texttt{seasonal}, and \texttt{spafit}.
+  \item[Output] 10,000 key-value pairs whose key is the center point of each 
+  bin, and value is the number of residuals falling into the corresponding bin.
+  \item[Map] For each input key-value pair, the frequency of residuals in each
+  of 10,000 bins are calculated by R function \texttt{cut}. Then we generate
+  10,000 intermediate key-value pairs, one for each bin. The key is index of bin,
+  and value is the count of residuals in corresponding bin. The cutting points
+  of 10,000 intervals are passed and load into each mapper as a shared RData file.
+  \item[Reduce] All counts who share the same bin index are shuffled, sorted, and
+  sum together. The final 10,000 frequencies of residuals in bins are saved as
+  key-value pairs on HDFS.
+\end{description}
+
+Once we got the frequency table of residuals in each bin, it is trivial to get
+the accumulated frequency, based on which, we can easily approximate the 
+quantiles at the pre-defined f values $f_i$ by left-continuous constant 
+interpolation. In Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.residual.centerquant.pdf}
+{\ref*{spafit.centerquant}}, sequence of quantiles from 0.005 quantiles to 0.995
+quantiles increment by 0.005 are plotted against to their corresponding f-value.
+It shows that, 99\% of residuals are symmetrically distributed within $\pm 2$, 
+and are centering at 0 as well. 90\% of residuals, which are 1,887,140, are 
+distributed within $\pm 1$.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.residual.centerquant.pdf}
+  {Link to figure}
+  \captionof{figure}{The distribution of residual}
+  \label{spafit.centerquant}
+\end{center}
+\end{framed}
+
+Moreover, a quantile-quantile plot of residual is shown in Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.residual.QQ.pdf}
+{\ref*{spafit.qq}}. The 199 quantiles from 0.005 to 0.995 are drawn against to
+the corresponding quantiles from a t-distribution with degree of freedom 3. 
+Clearly, The linearity of the points suggests that the data are linearly related
+to a t-distribution centered at 0 with degree of freedom 3.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.residual.QQ.pdf}
+  {Link to figure}
+  \captionof{figure}{The quantile-quantile plot of residual}
+  \label{spafit.qq}
+\end{center}
+\end{framed}
+
+Outliers or extreme weather temperature is a very interesting problem which is
+highly concerned by people. In our analysis, we identify the residuals outside
+the range of $\pm 2$ as outliers of our fitting, which is defined by the 0.005
+and 0.995 quantiles. First we calculate the number of outliers in each month and
+plot it against the date in Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountvsTime.pdf}
+{\ref*{spafit.outlier.vs.time}}. Also a loess smoothing curve with degree equal
+to 1 and 0.2 span is superposed on the plot as a red curve.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountvsTime.pdf}
+  {Link to figure}
+  \captionof{figure}{The number of outliers vs. date}
+  \label{spafit.outlier.vs.time}
+\end{center}
+\end{framed}
+
+As we can see in Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountvsTime.pdf}
+{\ref*{spafit.outlier.vs.time}}, the number of outliers appreciably decreased
+between January 1950 to January 1958. Then it keeps as flat mostly less than 50
+after January 1950 till January 1980. After that, there is an obvious hump
+between January 1982 to December 1997. The largest number of outliers happens on
+December 1985, which has 183 outliers. We also notice that there is yearly 
+seasonality in the number of outliers as well. The next plot we plot the number
+of outliers in each of 12 month-in-year.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountCondmonth.pdf}
+  {Link to figure}
+  \captionof{figure}{The number of outliers in month of year}
+  \label{spafit.outlier.vs.time}
+\end{center}
+\end{framed}
+
+Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountCondmonth.pdf}
+{\ref*{spafit.outlier.vs.time}} illustrates that months in winter, such as
+January, December, February have more outliers than other months. On the other
+hand, the number of outliers is much smaller in spring and summer than that in
+winter. However, this may be caused by several months since we are only consider
+the overall count of outliers in each month-in-year. In the next Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountbystation.pdf}
+{\ref*{spafit.outlier.dist}}, the distribution of the number of outliers in each
+of 576 months is visualized superposed on different groups of month, winter or
+non-winter month. Winter includes December, January, and February. 
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountmonthWinter.pdf}
+  {Link to figure}
+  \captionof{figure}{The distribution of number of outliers in each month}
+  \label{spafit.outlier.dist}
+\end{center}
+\end{framed}
+
+The log base 2 number of outliers in each month is plotted against to their 
+corresponding f-value in the Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountbystation.pdf}
+{\ref*{spafit.outlier.dist}}.
+The magenta points represent the distribution of the count of outliers in the 
+winter months, and the blue points represent the distribution of all other months. 
+Clearly, the number of outliers in all winter months is larger than that in other
+months in distribution. There is a shift between two distribution with no doubt.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountbystation.pdf}
+  {Link to figure}
+  \captionof{figure}{The distribution of number of outliers in each station}
+  \label{spafit.outlier.stat}
+\end{center}
+\end{framed}
+
+Figure~
+\href{../plots/a1950/spafit/d2/span0.015/a1950.outliersCountbystation.pdf}
+{\ref*{spafit.outlier.dist}} illustrates the distribution of the log base 2 
+number of outliers in each station. We can tell that around 50\% of stations do
+not have any outliers, 95\% of stations only have less than 8 outliers, which is 
+only about 2\% number of observations in the time series of each station.
