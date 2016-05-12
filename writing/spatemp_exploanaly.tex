@@ -189,6 +189,7 @@ Interior Mountains, the Interior Plateau, Sierra Nevada Mountains, the Great
 Basin mountain ranges. Also, there are 724 stations are on the west coast of 
 United States, which is between the Pacific Ocean and the Pacific Coast Ranges.
 
+
 \subsubsection{The Number of Observation}
 
 As we mentioned in section~\ref{sec:Download}, missing values has been saved as 
@@ -271,6 +272,12 @@ temperatures fall to their lowest levels in over 100 years.
 \end{center}
 \end{framed}
 
+\subsection{Subset after Year 1950}
+
+As shown in the Figure \href{../plots/obs_month.pdf}{\ref*{obs.month}}, we notice
+the number of active stations gradually stabilized after Jan 1950. Since long
+period of missing observation is not the main concern of this thesis, we decide
+only consider stations with observations after Jan 1950.
 
 \subsubsection{Location of Stations}
 
@@ -285,12 +292,34 @@ location of 7,738 stations on the map of United States.
 \end{center}
 \end{framed}
 
+For each month, it is a spatial regularization of observation of maximum 
+temperature over 7,738 locations. But around 2,000 different stations have 
+missing value in each month. For instance, in Figure 
+\href{../plots/tmax.a1950.status.pdf}{\ref*{a1950.status}},
+we illustrate the observation status of 7,738 stations for all 576 months.
+
+\begin{framed}
+\begin{center}
+  \href{../plots/tmax.a1950.status.pdf}
+  {Link to figure}
+  \captionof{figure}{The observation status of stations in each month}
+  \label{a1950.status}
+\end{center}
+\end{framed}
+
+As we will see in later sections, diagnostic plots play a critical rule in our
+analysis. However it is not feasible to visualize the analytic results of all
+7,738 stations for example. A nature approach to compromise this issue is to 
+visualize a reasonable part of all stations. Randomly sampling stations may be
+plausible, but it is likely that we sampled stations densely or sparsely in a 
+specific region on the map. In order to get well presentation of all stations,
+a sampling procedure is proposed based on near exactly replicate.
+
 As shown in Figure \href{../plots/vertices.a1950.pdf}{\ref*{a1950.vertices}}
-A kd-tree with 128 cells is built based on 7,738 stations. Then one station is 
+A kd-tree with 512 cells is built based on 7,738 stations. Then one station is 
 sampled from each cell randomly. The blue dots on the graph show the locations 
-of these 128 sampled stations. The red dashed lines indicate the boundary of cells 
-of kd-tree. An index number from 1 to 128 is assigned to each station to 
-illustrate which cell the station comes from. 
+of these 512 sampled stations. An index number from 1 to 512 is assigned to each 
+station to illustrate which cell the station comes from. 
 
 \begin{framed}
 \begin{center}
@@ -302,7 +331,7 @@ illustrate which cell the station comes from.
 
 We also graph the quantile plot of the log base 2 of elevation of stations in each
 cell in Figure \href{../plots/elev.dist.bycell.pdf}{\ref*{elev.dist.bycell}}. 
-The elevation in majority of the 128 cells varies in a very limited range. However, 
+The elevation in majority of the 512 cells varies in a very limited range. However, 
 some of cells, such as cells 3, 4, 6, 9, 17, 18, in which stations are 
 concentrated in the area of west coast of the United State, the distribution of 
 elevation has a much more expanded range than that in the area of center United 
@@ -316,14 +345,12 @@ States.
 \end{center}
 \end{framed}
 
-Later on, these 512 stations are used in the section XXX for visualization and 
-diagnostics purpose.
-
 \subsubsection{The number of observation}
 
-As we discussed in section~\ref{sec:impute.w/o.elev}, because of consecutive 
-missing value over time for a given station, we have to impute missing values 
-based on their spatial neighbors in a given month. Here we provide visualization
+As shown in Figure \href{../plots/tmax.a1950.status.pdf}{\ref*{a1950.status}},
+the location of stations with missing value are relatively sparse and random.
+There is not a region filled up with all missing values. However the missing
+value is not quite random in the time dimension. Here we provide visualization 
 evidence about the hight rate of missing value in each station.
 
 \begin{framed}
@@ -366,17 +393,7 @@ larger than 16, which is more than a year.
 \end{center}
 \end{framed}
 
-For each month, it is a spatial regularization of observation of maximum 
-temperature over 7,738 locations. But around 2,000 different stations have 
-missing value in each month. For instance, in Figure 
-\href{../plots/tmax.a1950.status.pdf}{\ref*{a1950.status}},
-we illustrate the observation status of 7,738 stations for all 576 months.
-
-\begin{framed}
-\begin{center}
-  \href{../plots/tmax.a1950.status.pdf}
-  {Link to figure}
-  \captionof{figure}{The observation status of stations in each month}
-  \label{a1950.status}
-\end{center}
-\end{framed}
+Based on the property of the missing value in the dataset, it is recommended to
+start the analysis from the spatial dimension, which we divide the data into 
+by month division first. In the next section, we demonstrate how to generate the
+by month division, and how the spatial fitting is applied to the division.
