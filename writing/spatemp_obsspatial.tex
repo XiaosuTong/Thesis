@@ -1,13 +1,11 @@
 \section{Database of Division by Month}
 
-In the previous section, we illustrated the results of exploratory analysis.
-Recall in the Figure \href{../plots/obs_month.pdf}{\ref*{obs.month}}, we notice
-the number of active stations gradually stabilized after Jan 1950. Since long
-period of missing observation is not the main concern of this thesis, we decide
-only consider stations with observations after Jan 1950.
-
+In the previous section, we illustrated the results of exploratory analysis. Also
+as we mentioned in previous section, subset after 1950 is mainly considered in
+the rest of the thesis.
 The first database we create for data after 1950 is called division by month. In
-the following paragraph we describe the generation of such database with details.
+the following paragraph we describe the MapReduce job used to create such 
+database with details.
 
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, key is the
@@ -32,66 +30,56 @@ the following paragraph we describe the generation of such database with details
 
 \subsection{Distance Calculation of Neighbors}
 
+Before we start any discussion about the details of analysis procedure by month,
+let us have a second thought on the distance calculation in the Loess method.
 As we mentioned in section~\ref{sec:loess}, Loess method calculates the weights 
 $\omega_i(x)$
 for weighted least square based on the distance of neighbors $x_i$ to the target 
-point $x$. The distance calculation of $d(x_i, x)$ is based on Euclidean distance 
+point $x_0$. The distance calculation of $d(x_i, x_0)$ is based on Euclidean distance 
 (in two dimension for example):
-$$
-d(x_i, x) = \| x - x_i \|_2
-$$
-
-Treating geodetic coordinates as
-planar can induce deceptive anisotropy in the models because
-of the difference in differentials in longitude and latitude (a
-unit increment in degree longitude is not the same length as
-a unit increment in degree latitude except at the equator) \cite{banerjee2005geodetic}.
-
+\begin{equation} 
+d(x_i, x_0) = \| x_0 - x_i \|_2
+\end{equation} 
 In the spatial loess fitting, however, the Euclidean distance is apparently not 
-appropriate. A more reasonable and realistic distance definition is the Great-circle 
-distance, which is the shortest distance between two points on the surface of a 
-sphere, measured along the surface of the sphere (as opposed to a straight line 
-through the sphere's interior). The distance between two points in Euclidean 
-space is the length of a straight line between them, but on the sphere there are 
-no straight lines. In non-Euclidean geometry, straight lines are replaced with 
-geodesics. Geodesics on the sphere are the great circles (circles on the sphere 
-whose centers coincide with the center of the sphere).
-
-Through any two points on a sphere which are not directly opposite each other, 
-there is a unique great circle. The two points separate the great circle into 
-two arcs. The length of the shorter arc is the great-circle distance between the 
-points\cite{greatcircle}.
+appropriate. Because one unite increment in longitude degree is different than 
+that in latitude degree \cite{banerjee2005geodetic}. A more reasonable and 
+realistic distance definition in spatial dimension is the Great-circle distance, 
+which is the shortest distance between two points on the surface of a sphere, 
+measured along the surface of the sphere (as opposed to a straight line through 
+the sphere's interior) \cite{greatcircle}. 
 
 Explicitly, let $\phi_a$, $\lambda_a$ and $\phi_b$, $\lambda_b$ be the geographical 
 latitude and longitude of two points $a$ and $b$, and $\Delta \phi$, 
 $\Delta \lambda$ their absolute differences; then $\Delta \sigma$ the central angle 
 between them, is given by:
-$$
+\begin{equation} 
 \Delta \sigma_{a,b} = 2 \arcsin \sqrt{ \sin^2 ( \frac{\Delta \phi}{2} ) + \cos 
 \phi_a \cdot \cos \phi_b \cdot \sin^2 ( \frac{\Delta \lambda}{2} )}
-$$ 
+\end{equation} 
 Then the distance $d(a,b)$, i.e. the arc length, for a sphere of radius $r$ is
-$$
+\begin{equation} 
 d(a,b) = r \Delta \lambda_{a,b}
-$$
+\end{equation} 
 
 \subsection{Spatial Smoothing without Elevation}
 \label{sec:impute.w/o.elev}
 
-As a practical matter, for many of the infill cases, records from the previous and
-following months are not available and therefore a model that includes a temporal 
-component will not improve the estimates. Stein (1999) suggests that the
-best linear unbiased prediction at a point of interest, when using a stationary 
-model, depends on local behavior of the random field far more than on behavior at 
-locations far from the point of interest and is one justification for simplifying 
-the infilling over an irregular lattice of time and space.
-
-As the distance function is well defined, based on which we start the imputation 
-of missing value by spatial loess against to longitude and latitude. Concretely,
-the missing value in each month is imputed by its neighbors using locally weighted
-regression against to longitude and latitude of each location. Moreover, imputation
-in each month are carried out independently in parallel using database of division
-by month as input, and generate a new by month division with missing value imputed.
+As a practical matter, for many of the stations, records from the previous and
+following months are not available. 20 percent of stations have consecutive 
+missing period even longer than a year. Apparently it is more reasonable and
+feasible to start the analysis by applying spatial loess against to longitude and 
+latitude to the by month division we generated above. By doing this, missing 
+value can be reasonable infilled using observations in their neighborhood in each 
+month. Specifically, a kd-tree \cite{bentley1980multidimensional} is built based 
+on the location of all 7,738 stations. Spatial loess fitting is carried out at
+each vertex of the kd-tree based on the Great-circle distance. And then cubic 
+interpolation is proceeded at all stations. For the spatial loess, the smoothing
+neighborhoods are small, since the purpose of this fitting is to eliminate 
+spatial noise and infill missing values. Over smoothing is much worse than 
+under smoothing in this case.   
+Moreover, fitting in each month are carried out independently in parallel using 
+database of division by month as input, and generate a new by month division with 
+spatial smoothed value.
 
 Next we illustrate the MapReduce job which proceed the imputation in parallel.
 \begin{description}
@@ -99,45 +87,32 @@ Next we illustrate the MapReduce job which proceed the imputation in parallel.
   \texttt{year} and \texttt{month}; value is a data.frame object with 7,738 
   number of rows, each of which is observation for one station.
   \item[Output] 576 key-value pairs. Key is same as input, and value is still
-  a data.frame but with missing value been imputed. 
+  a data.frame but with an added column of spatial smoothed value. 
   \item[Map]For every input key-value pair, we carry out the spatial loess 
-  imputation at every location with missing value in that month. 
+  fitting to get spatial smoothed value. 
   \item[Reduce] Reduce is not needed in this MapReduce job.
 \end{description}
 
-In the Map step, the spatial loess imputation is proceeded by a new R package 
+In the Map step, the spatial loess smoothing is proceeded by a new R package 
 named \texttt{Spaloess}. This package is wrote based on the \texttt{loess} function
-in the base R. The original LOESS implementation in R, available by \texttt{loess},
-is just a wrapper around the C and FORTRAN code. This implementation only allows
-for Euclidean distance when calculated the weights for neighbors. Also it does
-not predict missing values in the data. The main function in the \texttt{Spaloess} 
-package is \texttt{spaloess}, which has following added new feature compared with 
-\texttt{loess}:
-\begin{itemize}
-  \item allow two different type of distance calculation: Euclidean distance or
-  Great-circle distance. Of course, if Great-circle distance is chosen, the 
-  predictor variables must be longitude and latitude, or elevation.
-  \item can handle and predict the NA in the input data, controlled by a logic
-  argument.
-\end{itemize}
+in the base R. The original LOESS implementation in R, named as \texttt{loess},
+only allows Euclidean distance when calculated the weights for neighbors. Moreover,
+the kd-tree is built excluding missing values, which can be a problem for 
+interpolation if the missing values are at location outside the range or area 
+covered by the observations that used to build the kd-tree. Also the missing
+values cannot be predicted without another call of \texttt{predict} function. 
+More details about the \texttt{Spaloess} package will be discussed in 
+section~\ref{sec:Rpackage}.
 
-The parameters needed for the spatial loess are span, which control the percent
-of neighbors used in the regression, and degree controls the polynomial degree of
-the regression. 
-After the previous MapReduce job, there is a data.frame as value of key-value 
-pairs including the original maximum temperature observation as well as the 
-imputed value of all stations for each month. In the next section, we demonstrate
-the spatial imputation with different parameters, and assess the imputation by
-visualization method.
-
-Then we carry out another MapReduce job to generate visual graph in parallel. 
-However the visualization methods are typically applied to each subset in a 
-sample of subsets, the sampled 128 stations, because there are too many of them 
-to look at plots of all \cite{Hafen:2013}.
-Overall, there are two types of visual graph to assess the spatial imputation. The
-first type is generating visual display for each year. Visualization of twelve
-months in a given year is plotted on one page with twelve panels. The layout of
-panels maybe different depends on the visualization itself. For this type of 
+There are two smoothing parameters needed for the spatial loess, which are span 
+controlling the number of neighbors used in the local regression fit, and degree 
+controlling the polynomial degree of the regression. The smoothing result can be
+evaluated based on the diagnostic plots which can be generated by MapReduce job
+in parallel. Overall, there are two types of visual graph to assess the spatial 
+spatial smoothing, which we demonstrate in details. The first type is generating 
+visual display for each year. Visualization of twelve months in a given year is 
+plotted on one page with twelve panels. The layout of panels maybe different 
+depends on the visualization itself. 
 
 Next we illustrate the MapReduce job which proceed the first type of visual graph
 in parallel.
@@ -146,16 +121,16 @@ in parallel.
   \item[Input] 576 key-value pairs of by month division. Key is a vector of
   \texttt{year} and \texttt{month}; value is a data.frame object with 7,738 
   number of rows, which includes original observation of maximum temperature
-  and the imputed value. Also the residual of imputation for each station is 
-  calculated.
+  and the spatial smoothed value. 
   \item[Output] 48 key-value pairs. Key is \texttt{year}, and value is a serialized
   trellis object for a given year created by \texttt{serialize} function.
   \item[Map]For every input key-value pair, the key is changed from a vector of 
   \texttt{year} and \texttt{month} to \texttt{year} only. The value is kept the
-  same as input.
+  same as input. Also the residual of spatial smoothing for each station is 
+  calculated.
   \item[Reduce] Intermediate key-value pairs who share the same \texttt{year} are
-  shuffled and send to one reduce, and then twelve data.frame are row bind 
-  together accumulatively. A predefined plotting engine function defined based on 
+  shuffled and sent to one reducer, and then twelve data.frame are row-binded 
+  together accumulatively. A predefined plotting engine function based on 
   functions in \texttt{lattice} package is passed into each reducer and apply to 
   the accumulated data.frame, which generates a \texttt{trellis} object for each 
   year. In the end, \texttt{serialize} function is applied to the trellis object 
@@ -169,23 +144,22 @@ visualization, \texttt{trellis} object of each year is generated on one page in
 the Reduce step by calling a specific visualization function in \texttt{lattice} 
 package, for example, \texttt{xyplot} or \texttt{qqmath}.
 
-The Second type of visualization is to assess the imputation for each of 576 month
-on one page. Specifically, a serialized \texttt{trellis} object is created for 
-each month. We illustrate this in the next MapReduce job.
+The Second type of visualization is to assess the spatial smoothing for one of 
+576 month on each page. Specifically, a serialized \texttt{trellis} object is 
+created for each month. We illustrate this in the next MapReduce job.
 
 \begin{description}
   \item[Input] 576 key-value pairs of by month division. Key is a vector of
   \texttt{year} and \texttt{month}; value is a data.frame object with 7,738 
   number of rows, which includes original observation of maximum temperature
-  and the imputed value. Also the residual of imputation for each station is 
-  calculated.
-  \item[Output] 576 key-value pairs. Key is same as input, and value is a serialized
-  trellis object created by \texttt{serialize} function.
+  and the spatial smoothed value. 
+  \item[Output] 576 key-value pairs. Key is same as input, and value is a 
+  serialized trellis object created by \texttt{serialize} function.
   \item[Map]For every input key-value pair, a predefined plotting engine function
-  defined based on functions in \texttt{lattice} package is passed into and apply 
-  to the value, which generate a \texttt{trellis} object for each key-value pair. 
-  Then \texttt{serialize} function is applied to the trellis object in order to 
-  save it as the value of intermediate key-value pairs.
+  based on functions in \texttt{lattice} package is passed into the mapper and 
+  apply to each value, which generate a \texttt{trellis} object for each 
+  key-value pair. Then \texttt{serialize} function is applied to the trellis 
+  object in order to save it as the value of intermediate key-value pairs.
   \item[Reduce] Reduce is not needed in this MapReduce job. Intermediate key-value
   pairs are directly save to HDFS.
 \end{description}
@@ -193,39 +167,40 @@ each month. We illustrate this in the next MapReduce job.
 \subsubsection{span = 0.05 and degree = 2}
 
 In the first run, we specify the span of spatial loess to be 0.05, which means
-for each missing value, it will be imputed by using 5 percent of valid observation
-in its neighborhood. And the polynomial degree of spatial loess fit is set to be
-quadratic.
+for each station, spatial smoothed value is calculated by using 5 percent of 
+valid observation in its neighborhood. And the polynomial degree of spatial loess 
+fit is set to be quadratic.
 
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResidcenter.bytime.pdf}
   {Link to figure}
   \captionof{figure}
-  {The normal quantiles between 0.015 and 0.985 of residual of spatial imputation}
+  {The normal quantiles between 0.015 and 0.985 of residual of spatial spatial 
+  smoothing}
   \label{nonelev.0.05.Residcenter.bytime}
 \end{center}
 \end{framed}
 
-For each month, there are around 5,000 imputation residuals. 971 quantiles of the
-imputation residuals, from 0.015 to 0.985, are plotted against to their corresponding 
-unit Normal quantiles in Figure 
+For each month, there are around 5,000 spatial smoothing residuals. 971 quantiles 
+of the spatial smoothing residuals, from 0.015 to 0.985, are plotted against to 
+their corresponding unit Normal quantiles in Figure 
 \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResidcenter.bytime.pdf}
 {\ref*{nonelev.0.05.Residcenter.bytime}}. Notice that the range of the residual
 for each month is from -5 to 5 collectively, and it has longer tail compared with
 unit Normal distribution. Besides the Normal quantile plot, another type of 
-diagnostics plot to assess the imputation of missing value is the scatter plot of
-imputation residual against to one of the predictor variables conditional on the
-other one, specifically longitude and latitude, which will be shown in the following. 
-As in Figure
+diagnostics plot to assess the spatial smoothing is the scatter plot of residual 
+against to one of the predictor variables conditional on the other one, 
+specifically longitude and latitude, which will be shown in the following. As in 
+Figure
 \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
 {\ref*{nonelev.0.05.Residvslat.lon}}, when longitude is being conditional on, it
-is equally cut into categorical variable with 20 intervals. Then imputation 
-residual is plotted against to latitude in each interval of longitude in each of
-20 panels. Also a loess smoothing curve, with span is equal to 0.25 and degree is
-equal to 1, is added to help us assess the overall trend of the residuals. The 
-loess smoothing curve is collectively around the horizontal reference line at zero
-over all month. However, it is noticeable that most of large negative residuals are
+is equally cut into categorical variable with 20 intervals. Then spatial smoothing 
+residual is plotted against to latitude in each category of longitude. Also a 
+loess smoothing curve, with span is equal to 0.25 and degree is equal to 1, is 
+added to help us assess the overall trend of the residuals. The loess smoothing 
+curve is collectively around the horizontal reference line at zero over all month. 
+However, it is noticeable that most of large negative residuals are
 regularly show up in the first five panels over all months. The first five panels
 are for the longitude from -124.7 to -110.9 degree. Recall that this region is
 the Rocky Mountains where the elevation is various dramatically.
@@ -241,7 +216,8 @@ station is that it is the only station with elevation above 1200 meters among
   \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
   {Link to figure}
   \captionof{figure}
-  {The residual of spatial imputation against to latitude conditional on longitude}
+  {The residual of spatial spatial smoothing against to latitude conditional on 
+  longitude}
   \label{nonelev.0.05.Residvslat.lon}
 \end{center}
 \end{framed}
@@ -260,18 +236,18 @@ around longitude -82 degree. It is the region of Appalachian Mountains.
   \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lon.lat.pdf}
   {Link to figure}
   \captionof{figure}
-  {The residual of spatial imputation against to longitude conditional on latitude}
+  {The residual of spatial spatial smoothing against to longitude conditional on latitude}
   \label{nonelev.0.05.Residvslon.lat}
 \end{center}
 \end{framed}
 
-Intuitively, we want to illuminate the amount of bias in the imputation. We have 
+Intuitively, we want to illuminate the amount of bias in the spatial smoothing. We have 
 to sacrifice the variation in the bias-variance trade-off of the local regression
 method. Meanwhile, elevation is another potential critical predictor variable to
 impute the maximum temperature based on the diagnostics plots above.
-Consequently, we need to consider a new imputation model which includes elevation as
+Consequently, we need to consider a new spatial smoothing model which includes elevation as
 one of the predictor variables, also shrink the span value to illuminate the 
-bias in the imputation.
+bias in the spatial smoothing.
 
 \subsection{Spatial Smoothing with Elevation}
 
@@ -281,7 +257,7 @@ calculation when elevation is added into the model. If we simply add elevation
 in the local regression model directly, the calculation of weights of neighbors
 needs modification based on the three-dimension predictor space. However, the 
 definition of distance in this three-dimension space is not trivial, since the
-temperature is not isotropic in elevation direction and in the surface. As a 
+temperature is not isotropic in the vertical and horizontal direction. As a 
 result, Euclidean distance in three-dimension space is not appropriate for this
 situation. Meanwhile, it is more intuitively to assume that the neighborhood or
 distance to neighbors are defined only based on longitude and latitude, as the
@@ -293,87 +269,77 @@ a global parameter into the local regression model.
 
 The conditionally parametric fit, introduced in \cite{cleveland1992local}, provides
 a generalization of the semi-parametric model, without the complexity of a full
-local fit. By definition, We are trying to fit a nonparametric surface of maximum 
-temperature based on longitude, latitude, and elevation, which are three predictor
-variables. A nonparametric surface is conditionally parametric if we can divide
-the predictor variables up into two disjoint subsets \texttt{A} and \texttt{B} 
-with the following property: given the values of the variables in \texttt{A},
-the surface is a member of a parametric class as a function of the the variables
-in \texttt{B}. We say that the surface is conditionally parametric in \texttt{A}.
-It makes sense to specify a regression surface to be conditionally parametric
-in one or more variables if exploration of the data or a priori information
-suggests that the underlying pattern of the data is globally a very smooth
-function of the variables. Making such a specification when it is valid can
-result in a more parsimonious fit.
+local fit. Under the context of the dataset, we can easily divide the three 
+predictor variables into two disjoint groups, one includes longitude and latitude
+which is the horizontal direction, and another is elevation in the vertical 
+direction. It is a well known fact that the pressure is decreasing when altitude
+is going up. Therefore at a given location, the temperature is decreasing as well
+when altitude is high. It is plausible to specify the maximum temperature to be
+conditionally parametric in longitude and latitude.
+Making such a specification when it is valid can result in a more parsimonious fit.
 An exceedingly simple modification of loess fitting yields a conditionally
-parametric surface. We simply ignore the conditionally parametric factors
-in computing the Euclidean distances that are used in the definition of the
-neighborhood weights, $W_i$(x).
+parametric surface. We simply ignore the elevation factor in computing the 
+distances that are used in the definition of the neighborhood weights, $W_i$(x).
 
-The method for making a loess fit conditionally parametric in a proper subset of
-predictors is simple. The subset is ignored in computing the Euclidean distances 
-that are used in the definition of the neighborhood weights, $\omega_i(x)$. Let 
-us use an example to explain why this produces a conditionally parametric surface. 
-Suppose that there are two predictors, $\mu$ and $\nu$, and $\lambda=2$. Suppose 
-we specify $\mu$ to be a conditionally parametric predictor. Since the weight 
-function ignores the variable $\mu$ the $i$th weight, $\omega_i(\mu, \nu)$ for 
-the fit at $(\mu, \nu)$, is the same as the $i$th weight, $\omega_i(\mu+t, \nu)$, 
-for the fit at $(\mu+t, \nu)$. Thus the quadratic polynomial that is fitted locally 
-for the fit at $(\mu, \nu)$ is the same as the quadratic polynomial that is fitted 
-locally for the fit at $(\mu+t, \nu)$, whatever the value of $t$. So for the fixed 
-value of $\nu$, the surface is exactly this quadratic as a function of the first 
-predictor.
+Let us demonstrate the concept and implementation with more details. The method 
+for making a loess fit conditionally parametric in a proper subset of predictors 
+is simple. The subset is ignored in computing the distances that are used in the 
+definition of the neighborhood weights, $\omega_i(x)$.
+Suppose that there are two predictors in order to make the point straight forward, 
+$\mu$ and $\nu$. Suppose we specify $\mu$ to be the global variable of the 
+conditionally parametric model. Since the weight function ignores the variable 
+$\mu$ the $i$th weight, 
+$\omega_i(\mu, \nu)$ for the fit at $(\mu, \nu)$, is the same as the $i$th weight, 
+$\omega_i(\mu+\delta, \nu)$, for the fit at $(\mu+\delta, \nu)$. Thus the quadratic 
+polynomial that is fitted locally for the fit at $(\mu, \nu)$ is the same as the 
+quadratic polynomial that is fitted locally for the fit at $(\mu+\delta, \nu)$, 
+whatever the value of $\delta$. So for the fixed 
+value of $\nu$, the surface is exactly this quadratic as a function of the $\mu$.
 
 A growing list of practical applications has shown that conditionally parametric
 fits add structure in a way that is quite useful in practice 
-\cite{cleveland1991computational} and \cite{hastie1990generalized}. This is to be
-expected because there is a good argument for why we would expect conditionally
-parametric surfaces to frequently provide a good fit. If a surface has, instead
-of no effect, a very limited effect due to these factors compared to other factors,
-it is reasonable to expect that the effect would be nearly linear or quadratic
-in these factors given the others. One way to argue for this is to think of Taylor
-series approximations. Consider the maximum temperature surface as a function 
-over all imaginable values of C and E. Suppose it is very complex function of both
-C and E with many peaks and valleys. Taylor series arguments make it clear that
-C can be varied by a sufficiently small amount in an experiment so that the 
-surface is well approximated by a function that is constant in C given E. If the
-domain of variation of C is enlarged, the next approximation is a linear function
-of C given E, and then quadratic. This argument carries with it a corollary; we 
-would expect that, overall, the influence of the variables in which the surface
-is conditionally parametric would be less than the influence of the other 
-variables. 
-
-The conditionally parametric model is similar to the partially linear model,
-in that the fit is smooth in some variables and parametric in others. But
-the conditionally parametric fit allows all coefficients of the parametric
-variables to depend on the smoothing variables. A conditionally quadratic
-fit has the form
+\cite{cleveland1991computational} and \cite{hastie1990generalized}. In 
+\cite{cleveland1994coplots}, Cleveland illustrate the conditional parametric model
+using Taylor series approximations as a handrail, which is very delightful.
+Specifically, consider the maximum temperature surface as a function over all 
+factor longitude, latitude, and elevation. And suppose the surface is very complex
+and has a lot of peaks and valleys. By Taylor series, if the elevation is varied 
+by a sufficiently small amount, the temperature surface can be well approximated
+by a very simple function, linear or quadratic given the value of longitude and
+latitude. In \cite{cleveland1992local}, The conditionally parametric model is 
+compared to the partially linear model, which is similar with it. However, the 
+conditionally parametric model allows all coefficients of the parametric variables 
+to depend on the smoothing variables, which is not valid in partially linear
+model. 
 
 \subsubsection{span=0.015, degree=2}
 
-Based on the result we found in the previous subsection, we modify the span of 
-spatial imputation to be 0.015, which means about 75 locations in the neighborhood
-of the target location will be used for local weighted regression fit if there 
-are roughly 5,000 locations in total. The degree for longitude and latitude 
-variables are kept as quadratic, and the degree for conditional parameter 
-elevation is also specified as quadratic. We demonstrate and assess the imputation
-result for this fit in the following diagnostics graph.
+Based on the result we found in the section~\ref{sec:impute.w/o.elev}, we modify 
+the span of spatial spatial smoothing to be 0.015, which means about 75 stations 
+in the neighborhood of the target location will be used for local weighted 
+regression fit if there are roughly 5,000 locations in total. The degree for 
+longitude and latitude variables are kept as quadratic, and the degree for 
+conditional parameter elevation is also specified as quadratic. We demonstrate 
+and assess the spatial smoothing result for this fit in the following diagnostics 
+graph.
 
-Similarly, the quantiles between 0.015 and 0.095 of imputation residual is plotted 
-against to the corresponding quantiles from a unit Normal distribution in Figure
+Similarly, the quantiles between 0.015 and 0.095 of spatial smoothing residual is 
+plotted against to the corresponding quantiles from a unit Normal distribution in 
+Figure
 \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResidcenter.bytime.pdf}
 {\ref*{elev2.0.015.Residcenter.bytime}}. As we can notice, even though the 
 distribution of residual still has a longer tail than unit Normal distribution,
 the range of it for each month is about from -2 to 2 collectively, which is about 
-60 percent less of the range of residual in the previous imputation model. Also
-the longer tail issue becomes less severe than previous one.
+60 percent less of the range of residual in the previous spatial smoothing model. 
+Also the longer tail issue becomes less severe than previous one.
 
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResidcenter.bytime.pdf}
   {Link to figure}
   \captionof{figure}
-  {The normal quantiles between 0.015 and 0.985 of residual of spatial imputation}
+  {The normal quantiles between 0.015 and 0.985 of residual of spatial spatial 
+  smoothing}
   \label{elev2.0.015.Residcenter.bytime}
 \end{center}
 \end{framed}
@@ -382,11 +348,11 @@ Next, we generate the diagnostics plots about the residual against to one of the
 predictor variables to detect any pattern left in the residual with respect to
 the predictors. As shown in Figure
 \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lat.lon.pdf}
-{\ref*{elev.0.015.Residvslat.lon}}, imputation residual is drawn against to 
-latitude conditional on longitude. Again, longitude is equally cut into 20 
+{\ref*{elev.0.015.Residvslat.lon}}, spatial smoothing residual is drawn against 
+to latitude conditional on longitude. Again, longitude is equally cut into 20 
 intervals, and a loess smoothing curve with span equal to 0.25 and degree 1 is
-added, which is approximately a flat horizontal line around 0. Furthermore, compared 
-with Figure 
+added, which is approximately a flat horizontal line around 0. Furthermore, 
+compared with Figure 
 \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
 {\ref*{nonelev.0.05.Residvslat.lon}}, which does not include elevation as a
 conditional parameter, the outlier issue in the first five panels are not as 
@@ -394,22 +360,24 @@ severe as it in Figure
 \href{../plots/a1950/spaimpute/nonelev/span0.05/a1950.spaResid.vs.lat.lon.pdf}
 {\ref*{nonelev.0.05.Residvslat.lon}}, or even disappeared in some of months.
 Besides that, the station \texttt{275639} with elevation 1909 meters, longitude 
--71.30 degree and altitude 44.27 degree in the last panel is not an outlier anymore.
+-71.30 degree and altitude 44.27 degree in the last panel is not an outlier 
+anymore.
 
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lat.lon.pdf}
   {Link to figure}
   \captionof{figure}
-  {The residual of spatial imputation against to latitude conditional on longitude}
+  {The residual of spatial spatial smoothing against to latitude conditional on 
+  longitude}
   \label{elev.0.015.Residvslat.lon}
 \end{center}
 \end{framed}
 
 Then, We switch longitude and latitude, and plot the residuals against to longitude
 conditional on 20 intervals of latitude. Still most of the outliers existed in 
-the previous imputation in section~\ref{sec:impute.w/o.elev} are vanished across
-all panels in Figure
+the previous spatial smoothing in section~\ref{sec:impute.w/o.elev} are vanished 
+across all panels in Figure
 \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lon.lat.pdf}
 {\ref*{elev.0.015.Residvslon.lat}}. Same for the outliers in the region of 
 Appalachian Mountains. Consequently, we keep the result of current fitting, span 
@@ -421,21 +389,22 @@ original dataset.
   \href{../plots/a1950/spaimpute/elev/d2/span0.015/a1950.spaResid.vs.lon.lat.pdf}
   {Link to figure}
   \captionof{figure}
-  {The residual of spatial imputation against to longitude conditional on latitude}
+  {The residual of spatial spatial smoothing against to longitude conditional on 
+  latitude}
   \label{elev.0.015.Residvslon.lat}
 \end{center}
 \end{framed}
 
 Of course, we are not trying to perfectly capture the spatial variation in the
-maximum temperature within the imputation. It is only to fill in the missing 
-values and solve the consecutive missing value issue, which will be a rigorous 
+maximum temperature within this spatial smoothing. It is only to fill in the 
+missing values and smooth out some spatial noise, which will be a rigorous 
 problem in \texttt{stlplus} fit in the next section. Another crucial reason for
-imputing spatially is for the prediction at a new location. Suppose we would like
-to carry out prediction at a new location where there is no historical data at
-all. So all information we can borrow for predicting is based on spatial dimension 
-instead of time dimension. We impute by assuming there is only very limited 
-relation between different locations in two different months. After the imputation
-at the new location for each month in parallel, we then will carry out the fitting
-in time dimension as demonstrated in the following section since we generated an 
-estimated time series at the new location.
+smoothing spatially first is for the prediction at a new location. Suppose we 
+would like to carry out prediction at a new location where there is no historical 
+data at all. So all information we can borrow for predicting is based on spatial 
+dimension instead of time dimension. We smooth by assuming there is only very 
+limited relation between different locations in two different months. After the 
+spatial smoothing at the new location for each month in parallel, we then will 
+carry out the fitting in time dimension as demonstrated in the following section 
+since we generated an estimated time series at the new location.
 
