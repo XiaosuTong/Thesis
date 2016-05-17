@@ -1,13 +1,13 @@
 \section{Exploratory Analysis}
 
 The FTP distribution of the 103-year monthly maximum temperature data set along
-with supporting meta-data can be found at \cite{data}. 
+with supporting meta-data can be found at the web page \cite{data}. 
 However, the data set not only includes the raw observed monthly
-maximum temperature, but also infill all missing values by statistical in-filled
-method conducted by IMAGe \cite{data}. Since those in-filled values are not samples 
-from the underlining  conditional distribution, we eliminate all in-filled values 
-from our data analysis. So missing value is also a problem we will tackle in
-our analysis.
+maximum temperature, but also has in-filled missing values which are calculated 
+by statistical in-filled method proposed by IMAGe \cite{data}. Since those 
+in-filled values are not samples from the underlining  conditional distribution
+of response variable, we eliminate all in-filled values from our data analysis. 
+So missing value is a problem we will also tackle in our analysis.
 
 In this section, we describe the procedures of our data downloading and initial 
 processing, followed by summary statistics of the observed monthly maximum 
@@ -18,15 +18,16 @@ corresponding analyses enabled and facilitated by each database.
 \subsection{Data Download and Initial Database}
 \label{sec:Download}
 
-The raw data set is in fixed width text format with 103 files having file names 
+The raw dataset is in fixed-width text format with 103 files having file names 
 in the form of \texttt{tmax.complete.Ynnn} with \texttt{nnn = 001, 002,} $\cdots$
 \texttt{, 103} which \texttt{001 = 1895} and \texttt{103 = 1997}. Each separate 
 data file consists of the maximum temperature for a single year. Each line of the 
 file contains 12 monthly maximum temperature observations and 12 observed/missing 
 value codes (\texttt{1=missing}, \texttt{0=observed}). We only keep the observed 
-monthly maximum temperature in our analysis. Totally there are 8,125 stations in 
-each file, and temperature appears as a integer in tenths of Celsius degree. For 
-instance, 73 in the raw text file should be interpreted as 7.3 Celsius degrees. 
+monthly maximum temperature in our analysis, and use \texttt{NA} to represent
+those missing value. Totally there are 8,125 stations in each file, and 
+temperature appears as a integer in tenths of Celsius degree. For instance, 73 
+in the raw text file should be interpreted as 7.3 degrees Celsius. 
 
 Additionally, besides the 103 raw data files, there is metadata about stations' 
 information which includes:
@@ -40,14 +41,13 @@ The metadata set is in text format of 244 KB.
 
 The first step is to parallelly download 103 data files from IMAGe data base and 
 save to the HDFS on the cluster. This is done through a MapReduce job described 
-as follow. Within the entire thesis, the mapper refers to the container which is
-running map task, and reducer refers to the container which is running reduce
-task. Map task and mapper can be treated as equivalent. Same for the reduce task
+as follows. Within the entire thesis, map task and mapper can be treated as 
+equivalent. Same for the reduce task
 and reducer.
 \begin{description}
-  \item[Input] Integers from 1 to 103. There is no real input files feed into this
+  \item[Input] Integers from 1 to 103. There is no real input files fed into this
   MapReduce job. Instead, we simulate the key of input key-value pairs to be
-  sequence of integer from 1 to 103 which is exactly the number of data set files. 
+  sequence of integer from 1 to 103, which is exactly the number of data set files. 
   Each of them is passed to one Mapper. 
   \item[Output] The 103 text files saved on HDFS.
   \item[Map] Download one file in each mapper. For each Mapper, the download link
@@ -55,12 +55,12 @@ and reducer.
   \texttt{https://www.image.ucar.edu/pub/nychka/NCAR\_tinfill/tmax.complete.Y}
   with the integer passed into this Mapper. The corresponding data file is
   downloaded into a temporal directory on the local file system of the server on 
-  which the Mapper is running, and then this local copy of file is automatically 
+  which the Mapper is running, and then this local copy of the file is automatically 
   copied onto HDFS after Map is finished.  
   \item[Reduce] Reduce is not needed in this MapReduce job.
 \end{description}
 The total raw text files saved on HDFS are around 90MB. Totally there are 836,875 
-lines in text files, and each line of the raw text file corresponded to twelve
+lines in text files. Each line of the raw text file corresponded to twelve
 monthly maximum temperature observations for a given station in a given year
 followed by their status code of observation (observed or missing) in terms of 0/1.
 
@@ -69,18 +69,19 @@ followed by their status code of observation (observed or missing) in terms of 0
 Next, an initial database of the whole data set is created based on plain text
 files. We consider to transform the raw text files to be a more
 analysis friendly structure, which only has one monthly observation per row. 
-Concretely, the new structure should include following fields (columns). We use 
-\texttt{NA} to represent missing value:
+Concretely, the new structure should include following fields (columns), and we 
+use \texttt{NA} to represent missing value in the \texttt{tmax} column:
 
 \begin{enumerate}
-  \item The station ID, which uniquely identifies each station.
-  \item The degree of longitude of the station.
-  \item The degree of latitude of the station.
-  \item The meter of elevation of the station.
-  \item The station name.
-  \item The year of the observation.
-  \item The month of the observation.
-  \item The observation of the maximum temperature for the given month.
+  \item \texttt{station.id}, the station ID, which uniquely identifies each 
+  station.
+  \item \texttt{lon}, the degree of longitude of the station.
+  \item \texttt{lat}, the degree of latitude of the station.
+  \item \texttt{elev}, the meter of elevation of the station.
+  \item \texttt{year}, the year of the observation.
+  \item \texttt{month}, the month of the observation.
+  \item \texttt{tmax}, the observation of the maximum temperature for the given 
+  month.
 \end{enumerate}
 
 By utilizing the RHIPE, which bridges the R and Hadoop, the new data structure 
@@ -91,13 +92,13 @@ We make the choice of R data.frame because it allows us to have different type o
 class for each column, and also it is extremely friendly to a great many of
 statistical analysis functions in R. A more critical reason for generating this
 initial database is that it provides more flexibility of producing different
-division of the dataset from the initial database, such as by month or by station
+division of the dataset from the initial database, such as by-month or by-station
 division which we will discuss with more details in the next several sections. 
 It also generalizes our analysis procedure to be feasible to different types of
 spatial-temporal dataset. 
 
 Before generating the initial database on HDFS, the metadata about station 
-information is processed to be a R data.frame object and saved on HDFS ad a 
+information is processed to be a R data.frame object and saved on HDFS as 
 RData file, \texttt{statinfo.RData} in advance.
 The initial database is fulfilled in a MapReduce job described as below:
 
@@ -106,29 +107,26 @@ The initial database is fulfilled in a MapReduce job described as below:
   lines. Each line includes information about 12 months maximum temperature for a 
   given station in a given year. The year information can be pulled from last three
   characters of the name of each text file, which \texttt{001 = 1895} and 
-  \texttt{103 = 1997}. Lines contain 14 tab-delimited columns:
-  (1) the station id, (2) to (13) is the monthly maximum temperature from January 
-  to December, (14) is a 12-digit character which indicates if 12 monthly maximum 
-  temperature is observed or missing. 
+  \texttt{103 = 1997}. Lines contain 14 tab-delimited columns.
   \item[Output] 10,042,500 observations, each of which is a key-value pair, with 
-  a combination of 8,125 unique station ID and 1,236 month index as the key, and 
-  a one-row R data.frame as value, which includes (1) \texttt{longitude}, degree 
-  of longitude of the station, (2) \texttt{latitude}, the latitude of the station, 
-  (3) \texttt{elevation}, the meter of elevation the station, (4) \texttt{year}, 
+  a combination of 8,125 unique station ID and 1,236 month index \texttt{date} as 
+  the key, and a one-row R data.frame as value, which includes (1) \texttt{lon}, 
+  degree of longitude of the station, (2) \texttt{lat}, the latitude of the station, 
+  (3) \texttt{elev}, the meter of elevation the station, (4) \texttt{year}, 
   year of the observation, (5) \texttt{month}, month of year (January to December), 
   (6) \texttt{tmax}, the monthly maximum temperature
-  \item[Map] The shared RData file containing all location information is first 
-  copied and load into the global environment of each Mapper. Meanwhile,
+  \item[Map] The shared RData file containing all location information is copied 
+  and loaded into the global environment of R session in each mapper. Meanwhile,
   Parse each line of the text file as a character string. For each line,
   we split the character string based on separator \texttt{\textbackslash t} by 
   calling R function \texttt{strsplit}, and then the station ID in the first field 
   is extracted out, and with the month index together are used as the key of the 
   intermediate key-value pairs. The rest of fields with the station information
-  matched by station ID  are saved in a R one-row data.frame as the value of the
+  matched by station ID, are saved in a R one-row data.frame as the value of the
   intermediate key-value pairs. 
-  \item[Reduce] Identity reduce function do not do anything to the intermediate 
-  key-value pairs besides evenly distributes all intermediate key-value pairs to 
-  multiple files, and save them on HDFS.
+  \item[Reduce] The identity reduce function do not do anything to the 
+  intermediate key-value pairs besides evenly distributing all intermediate 
+  key-value pairs to multiple files, and save them on HDFS.
 \end{description}
 
 \subsection{Summary of the Data}
@@ -143,7 +141,7 @@ to -67 degree, and the latitude ranges from 24.55 degree to 49 degree.
 \subsubsection{Location of Stations}
 
 Figure \href{../plots/allstationsone.pdf}{\ref*{all.location}} illustrates the
-location of all 8,125 stations on the map of United States.
+location of all 8,125 stations on a map of United States.
 
 \begin{framed}
 \begin{center}
@@ -155,8 +153,8 @@ location of all 8,125 stations on the map of United States.
 
 Meanwhile, we equally split the stations into 8 groups based on their elevation. 
 Cutting points are at 58m, 162m, 244m, 351m, 581m, 1098m, and 1647m. And 
-then location of stations are demonstrated on map of United States conditional on 
-the elevation.
+then location of stations are demonstrated on a map of United States conditional 
+on the elevation.
 
 \begin{framed}
 \begin{center}
@@ -192,14 +190,14 @@ United States, which is between the Pacific Ocean and the Pacific Coast Ranges.
 
 \subsubsection{The Number of Observation}
 
-As we mentioned in section~\ref{sec:Download}, missing values has been saved as 
+As we mentioned in section~\ref{sec:Download}, missing values have been saved as 
 \texttt{NA} in the database. We would like to reveal where and when those 
 missing values turn up.
 In Figure \href{../plots/obs_month.pdf}{\ref*{obs.month}}, the log base 2 number
 of observation is drawn against date. The red solid reference line in the plot is 
 the $\log_2(8125)$, which is the number of observation when there is no missing 
-value in that given month. The number of observation increased gradually from Jan
-1895 to Jan 1915. But then there was a dramatically jump in 1931. The valid
+value in that given month. The number of observations increased gradually from 
+Jan 1895 to Jan 1915. But then there was a dramatically jump in 1931. The valid
 observation number arose from 1,619 on Dec 1930 to 2,953 on Jan 1931. After Jan 
 1950, the count of observation stayed around $5,000$, which is 65\% of all
 stations. 
@@ -212,7 +210,7 @@ stations.
 \end{center}
 \end{framed}
 
-With a deeper look into the database, we found January has minimum number of 
+A deeper look into the database shows that January has minimum number of 
 observation in 70 out of 103 years. So the observation count is plotted against
 date superposed on month of year, only for January, February, and December in 
 Figure \href{../plots/obs_month_byseason.pdf}{\ref*{obs.month.season}}
@@ -233,15 +231,15 @@ indicate there is a significant drop of observation count on Jan 1982. And among
 the 16 years after that, January always has the lowest observation count.
 
 Moreover, we found that this drop on Jan 1982 is not caused by adjustment of 
-the stations such as one station shift its location to its neighborhood. It is
-because the 688 stations got missing observation on Jan 1982, but then they
-went back to be active again on Feb 1982, as shown in Figure 
+location of the stations, such as one station shift its location to its 
+neighborhood. It is because the 688 stations were missing observation on Jan 
+1982, but then they were active again on Feb 1982, as shown in Figure 
 \href{../plots/obs_Jan1982.pdf}{\ref*{Jan1982}}. The blue circles represent 
 stations whose status were changed to be missing from December 1981
 to January 1982. Meanwhile the magenta solid points represent stations whose
-observation status shifted back to be valid from January 1982 to February 1982.
+observation status switched back to be valid from January 1982 to February 1982.
 If a location has both blue circle and magenta solid point, it means that weather 
-station suddenly was failing on January 1982 but then went back to normal on 
+station suddenly failed on January 1982, but then went back to normal on 
 February 1982. 
 
 \begin{framed}
@@ -253,24 +251,11 @@ February 1982.
 \end{framed}
 
 We believe this astonishing number of failure of stations on January 1982 is caused
-by severe weather on January 1982, which may cause the battery in the weather 
-station died. As shown in Figure \href{../plots/monthmean.pdf}{\ref*{min.monthmean}},
-the mean of monthly minimum temperature over all stations are plotted against 
-date from 1931 to 1998. We found on January 1982, it reached the minimum value 
-of $-15.65$ degrees Celsius. And this is only for stations who has record in that 
-month, there were a lot of stations had missing value may have even lower records.  
-From January 11 to January 17, A brutal cold snap sends temperatures to all-time 
-record lows in dozens of cities throughout the Midwestern United States. Especially
-on January 17, 1982, so called "Cold Sunday"\cite{coldsunday}, in numerous cities 
-temperatures fall to their lowest levels in over 100 years.
-
-\begin{framed}
-\begin{center}
-  \href{../plots/monthmean.pdf}{Link to figure}
-  \captionof{figure}{The monthly minimum temperature vs. date}
-  \label{min.monthmean}
-\end{center}
-\end{framed}
+by severe weather, which may have caused the battery in the weather station to 
+die. From January 11 to January 17, A brutal cold snap sends temperatures to 
+record lows in dozens of cities throughout the Midwestern United States.
+Especially on January 17, 1982, so called "Cold Sunday"\cite{coldsunday}, in 
+numerous cities temperatures fall to their lowest levels in over 100 years.
 
 \subsection{Subset after Year 1950}
 
@@ -292,12 +277,6 @@ location of 7,738 stations on the map of United States.
 \end{center}
 \end{framed}
 
-For each month, it is a spatial regularization of observation of maximum 
-temperature over 7,738 locations. But around 2,000 different stations have 
-missing value in each month. For instance, in Figure 
-\href{../plots/tmax.a1950.status.pdf}{\ref*{a1950.status}},
-we illustrate the observation status of 7,738 stations for all 576 months.
-
 \begin{framed}
 \begin{center}
   \href{../plots/tmax.a1950.status.pdf}
@@ -307,9 +286,15 @@ we illustrate the observation status of 7,738 stations for all 576 months.
 \end{center}
 \end{framed}
 
+For each month, it is a spatial regularization of observation of maximum 
+temperature over 7,738 locations. But around 2,000 stations have 
+missing value in each month. For instance, in Figure 
+\href{../plots/tmax.a1950.status.pdf}{\ref*{a1950.status}},
+we illustrate the observation status of 7,738 stations for all 576 months.
+
 As we will see in later sections, diagnostic plots play a critical rule in our
 analysis. However it is not feasible to visualize the analytic results of all
-7,738 stations for example. A nature approach to compromise this issue is to 
+7,738 stations for example. A natural approach to compromise this issue is to 
 visualize a reasonable part of all stations. Randomly sampling stations may be
 plausible, but it is likely that we sampled stations densely or sparsely in a 
 specific region on the map. In order to get well presentation of all stations,
@@ -332,10 +317,10 @@ station to illustrate which cell the station comes from.
 We also graph the quantile plot of the log base 2 of elevation of stations in each
 cell in Figure \href{../plots/elev.dist.bycell.pdf}{\ref*{elev.dist.bycell}}. 
 The elevation in majority of the 512 cells varies in a very limited range. However, 
-some of cells, such as cells 3, 4, 6, 9, 17, 18, in which stations are 
-concentrated in the area of west coast of the United State, the distribution of 
-elevation has a much more expanded range than that in the area of center United 
-States. 
+some of the cells, such as cells 3, 4, 6, 9, 17, 18, in which stations are 
+concentrated in the area of west coast of the United State. The distribution of 
+elevation has a much more expanded range than that in the area of the central 
+United States. 
 
 \begin{framed}
 \begin{center}
@@ -348,10 +333,10 @@ States.
 \subsubsection{The number of observation}
 
 As shown in Figure \href{../plots/tmax.a1950.status.pdf}{\ref*{a1950.status}},
-the location of stations with missing value are relatively sparse and random.
+the location of stations with missing values are relatively sparse and random.
 There is not a region filled up with all missing values. However the missing
 value is not quite random in the time dimension. Here we provide visualization 
-evidence about the hight rate of missing value in each station.
+evidence about the high rate of missing value in each station.
 
 \begin{framed}
 \begin{center}
@@ -364,7 +349,8 @@ evidence about the hight rate of missing value in each station.
 \begin{framed}
 \begin{center}
   \href{../plots/a1950/a1950.obsrate.station.pdf}{Link to figure}
-  \captionof{figure}{The quantiles of rate of valid observation number in one station}
+  \captionof{figure}{The quantiles of rate of valid observation number in one 
+  station}
   \label{quant.obsrate}
 \end{center}
 \end{framed}
@@ -373,17 +359,17 @@ In Figure \href{../plots/a1950/a1950.obs.station.pdf}{\ref*{quant.obs}}, the
 number of observation for each station, in log base 2, is plotted against to 
 corresponding f-value. Only less than 20 percent of stations do not have missing
 value during that 576 months. Meanwhile, about 30 percent of stations have only
-256 or less observations in total. It is about 40 percent of total number of 
-observations for a station based on the Figure 
+256 or less observations in total. It is about 40 percent of total observations 
+for a station based on the Figure 
 \href{../plots/a1950/a1950.obsrate.station.pdf}{\ref*{quant.obsrate}}, in which 
-the rate of valid observation of each station is drawn against to corresponding 
-f-value.
+the rate of valid observation of each station is drawn against to the 
+corresponding f-value.
 
 If the missing values of each station are sparse only, we still can handle them 
-by \texttt{stlplus}. However, as shown in Figure 
-\href{../plots/a1950/a1950.consecutive.miss.station.pdf}{\ref*{quant.consecutivemiss}},
-more than 20 percent of stations have maximum length of consecutive missing value 
-larger than 16, which is more than a year. 
+by \texttt{stlplus} function in R. However, as shown in Figure 
+\href{../plots/a1950/a1950.consecutive.miss.station.pdf}
+{\ref*{quant.consecutivemiss}}, more than 20 percent of stations have maximum 
+length of consecutive missing values longer than 16, which is more than a year. 
 
 \begin{framed}
 \begin{center}
@@ -394,6 +380,6 @@ larger than 16, which is more than a year.
 \end{framed}
 
 Based on the property of the missing value in the dataset, it is recommended to
-start the analysis from the spatial dimension, which we divide the data into 
+start the analysis from the spatial dimension. We divide the data into 
 by month division first. In the next section, we demonstrate how to generate the
 by month division, and how the spatial fitting is applied to the division.
