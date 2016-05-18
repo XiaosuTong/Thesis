@@ -1,38 +1,35 @@
 \section{Database of Division by Month}
 
-In the previous section, we illustrated the results of exploratory analysis. Also
-as we mentioned in previous section, subset after 1950 is mainly considered in
-the rest of the thesis.
-The first database we create for data after 1950 is called division by month. In
-the following paragraph we describe the MapReduce job used to create such 
-database with details.
+In the previous section, we illustrated the results of exploratory analysis. We 
+also mentioned that subset after 1950 is mainly considered in the rest of the 
+thesis. The first database we create for data after 1950 is called division 
+by-month. In the following paragraph we describe the MapReduce job used to create 
+such division with details.
 
 \begin{description}
   \item[Input] 10,042,500 key-value pairs from the initial database, key is the
-  vector with combination of 8,125 unique \texttt{station.id} and one of 1,236 
-  month index, and a one-row R data.frame as the value. The value includes 
-  (1) \texttt{longitude}, (2) \texttt{latitude}, (3) \texttt{elevation}, (4) 
-  \texttt{year}, (5) \texttt{month}, month of year (January to December), (6) 
-  \texttt{tmax}, the monthly maximum temperature.
-  \item[Output] division by month in form of 576 key-value pairs, with vector of
-  \texttt{year} and \texttt{month} as the key, a R data.frame containing 
+  vector with one of the combination of 8,125 unique \texttt{station.id} and  
+  1,236 month index. The corresponding value is a one-row R data.frame. The value 
+  includes \texttt{lon}, \texttt{lat}, \texttt{elev}, \texttt{year}, 
+  \texttt{month}, and \texttt{tmax}.
+  \item[Output] By-month division, in the form of 576 key-value pairs, with 
+  \texttt{date}, month index, as the key, a R data.frame containing 
   observations from 7,738 stations in the corresponding month as the value.
   \item[Map]For every input key-value pair, we include a new column named 
   \texttt{station.id} to the data.frame, and remove the \texttt{year} and 
   \texttt{month} from the value to be the key of intermediate key-value pairs. 
   \item[Reduce] 7,738 of one-row data.frame corresponding to one month are 
-  aggregated to be one data.frame. Specifically all one-row data.frame who share
+  aggregated to be one data.frame. Specifically, all one-row data.frame who share
   the same \texttt{year} and \texttt{month} are shuffled and transferred to one 
   reducer, and then R function \texttt{rbind} is called in that reducer to combine 
-  those one-row data.frame.
+  those one-row data.frames.
 \end{description}
-
 
 \subsection{Distance Calculation of Neighbors}
 
 Before we start any discussion about the details of analysis procedure by month,
 let us have a second thought on the distance calculation in the Loess method.
-As we mentioned in section~\ref{sec:loess}, Loess method calculates the weights 
+As we mentioned in section~\ref{sec:loess}, loess method calculates the weights 
 $\omega_i(x)$
 for weighted least square based on the distance of neighbors $x_i$ to the target 
 point $x_0$. The distance calculation of $d(x_i, x_0)$ is based on Euclidean distance 
@@ -41,7 +38,7 @@ point $x_0$. The distance calculation of $d(x_i, x_0)$ is based on Euclidean dis
 d(x_i, x_0) = \| x_0 - x_i \|_2
 \end{equation} 
 In the spatial loess fitting, however, the Euclidean distance is apparently not 
-appropriate. Because one unite increment in longitude degree is different than 
+appropriate. Because one unit increment in longitude degree is different than 
 that in latitude degree \cite{banerjee2005geodetic}. A more reasonable and 
 realistic distance definition in spatial dimension is the Great-circle distance, 
 which is the shortest distance between two points on the surface of a sphere, 
@@ -66,9 +63,9 @@ d(a,b) = r \Delta \lambda_{a,b}
 
 As a practical matter, for many of the stations, records from the previous and
 following months are not available. 20 percent of stations have consecutive 
-missing period even longer than a year. Apparently it is more reasonable and
+missing periods longer than a year. It is more reasonable and
 feasible to start the analysis by applying spatial loess against to longitude and 
-latitude to the by month division we generated above. By doing this, missing 
+latitude to the by-month division as we generated above. By doing this, missing 
 value can be reasonable infilled using observations in their neighborhood in each 
 month. Specifically, a kd-tree \cite{bentley1980multidimensional} is built based 
 on the location of all 7,738 stations. Spatial loess fitting is carried out at
@@ -78,56 +75,57 @@ neighborhoods are small, since the purpose of this fitting is to eliminate
 spatial noise and infill missing values. Over smoothing is much worse than 
 under smoothing in this case.   
 Moreover, fitting in each month are carried out independently in parallel using 
-database of division by month as input, and generate a new by month division with 
+database of division by-month as input, and generate a new by-month division with 
 spatial smoothed value.
 
-Next we illustrate the MapReduce job which proceed the imputation in parallel.
+Next we illustrate the MapReduce job which proceeds the spatial smoothing in 
+parallel.
 \begin{description}
-  \item[Input] 576 key-value pairs of by month division. Key is a vector of
-  \texttt{year} and \texttt{month}; value is a data.frame object with 7,738 
-  number of rows, each of which is observation for one station.
+  \item[Input] 576 key-value pairs of by month division. Key is \texttt{date}; 
+  value is a data.frame object with 7,738 number of rows, each of which is 
+  observation for one station.
   \item[Output] 576 key-value pairs. Key is same as input, and value is still
-  a data.frame but with an added column of spatial smoothed value. 
-  \item[Map]For every input key-value pair, we carry out the spatial loess 
-  fitting to get spatial smoothed value. 
+  a data.frame but with an added column of spatial smoothed value, named 
+  \texttt{spaofit}. 
+  \item[Map]For every input key-value pair, \texttt{spaloess} function is applied
+  to the maximum temperature at 7,738 stations with their longitude and latitude 
+  as independent variables.
   \item[Reduce] Reduce is not needed in this MapReduce job.
 \end{description}
 
-In the Map step, the spatial loess smoothing is proceeded by a new R package 
-named \texttt{Spaloess}. This package is wrote based on the \texttt{loess} function
-in the base R. The original LOESS implementation in R, named as \texttt{loess},
-only allows Euclidean distance when calculated the weights for neighbors. Moreover,
-the kd-tree is built excluding missing values, which can be a problem for 
-interpolation if the missing values are at location outside the range or area 
-covered by the observations that used to build the kd-tree. Also the missing
-values cannot be predicted without another call of \texttt{predict} function. 
-More details about the \texttt{Spaloess} package will be discussed in 
-section~\ref{sec:Rpackage}.
+In the map step, the spatial loess smoothing is executed by function from a new 
+R package named \texttt{Spaloess}. This package is wrote based on the 
+\texttt{loess} function in the base R. The original loess implementation in R, 
+named as \texttt{loess}, only allows Euclidean distance when calculated the 
+weights for neighbors. Moreover, the kd-tree is built excluding missing values, 
+which can be a problem for interpolation if the missing values are at location 
+outside the range or area covered by the valid observations used to build the 
+kd-tree. Also the missing values cannot be predicted without another call of 
+\texttt{predict} function. More details about the \texttt{Spaloess} package will 
+be discussed in section~\ref{sec:Rpackage}.
 
-There are two smoothing parameters needed for the spatial loess, which are span 
-controlling the number of neighbors used in the local regression fit, and degree 
-controlling the polynomial degree of the regression. The smoothing result can be
-evaluated based on the diagnostic plots which can be generated by MapReduce job
-in parallel. Overall, there are two types of visual graph to assess the spatial 
-spatial smoothing, which we demonstrate in details. The first type is generating 
-visual display for each year. Visualization of twelve months in a given year is 
-plotted on one page with twelve panels. The layout of panels maybe different 
-depends on the visualization itself. 
+There are two smoothing parameters needed to be specified in the spatial loess, 
+which are span controlling the number of neighbors used in the local regression 
+fit, and degree controlling the polynomial degree of the regression. The 
+smoothing result can be evaluated based on the diagnostic plots which can be 
+generated in parallel. Overall, there are two types of visual graph to assess the
+spatial spatial smoothing. The first type is one visual display for each year. 
+Visualization of twelve months in a given year is plotted on one page with twelve 
+panels. The layout of panels maybe different depends on the character of 
+visualization itself. 
 
-Next we illustrate the MapReduce job which proceed the first type of visual graph
-in parallel.
+Next we illustrate the MapReduce job which generates the first type of visual 
+graph in parallel.
 
 \begin{description}
-  \item[Input] 576 key-value pairs of by month division. Key is a vector of
-  \texttt{year} and \texttt{month}; value is a data.frame object with 7,738 
-  number of rows, which includes original observation of maximum temperature
-  and the spatial smoothed value. 
+  \item[Input] 576 key-value pairs of by-month division. Key is \texttt{date}; 
+  value is a data.frame object with 7,738 number of rows, which includes original
+  observation of maximum temperature and the spatial smoothed value. 
   \item[Output] 48 key-value pairs. Key is \texttt{year}, and value is a serialized
   trellis object for a given year created by \texttt{serialize} function.
-  \item[Map]For every input key-value pair, the key is changed from a vector of 
-  \texttt{year} and \texttt{month} to \texttt{year} only. The value is kept the
-  same as input. Also the residual of spatial smoothing for each station is 
-  calculated.
+  \item[Map]For every input key-value pair, the key is changed from \texttt{date} 
+  to \texttt{year} only. The value is kept the same as input. Also the residual 
+  of spatial smoothing for each station is calculated.
   \item[Reduce] Intermediate key-value pairs who share the same \texttt{year} are
   shuffled and sent to one reducer, and then twelve data.frame are row-binded 
   together accumulatively. A predefined plotting engine function based on 
